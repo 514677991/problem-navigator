@@ -4,16 +4,37 @@
 
 Turn an unclear general or product/software problem into an evidence-backed research report, decision or design specification. Shared skills and a local Python/MCP research core support Chinese and English. Release **2.2.0**; research MCP **0.2.0**; [MIT](LICENSE).
 
-## How it protects decision quality
+## Core ideas across the eight stages
 
-- **Evidence before preference.** Frame the problem and collect relevant support and counterevidence, then clarify the user-owned trade-offs that can change the decision.
-- **An isolated court.** Candidate advocates, redteam and feasibility reviewers complete independent papers before exchanging them. A fresh, non-participating judge decides from the sealed record. Supported Agent Team must be used; otherwise real independent Sessions preserve the roles manually.
-- **Visible evidence gaps.** Separate facts, supported inferences, assumptions and unknowns. Missing evidence leads to targeted research, a qualified partial report or no selection; debate does not manufacture a winner.
-- **Scope that fits the problem.** General problems follow their relevant mechanisms and constraints; product/software problems preserve What before How. Request a PRD only or technical specification only without unrelated chapters.
-- **Traceable, correctable conclusions.** Link claims, sources, candidates and requirements. Correcting evidence reopens affected work, preserves research counts and invalidates stale decisions and documents.
-- **Honest acceptance.** Drafting permission allows a preview. Publication requires acceptance of the actual document and checks its current bindings and member bytes.
+Problem Navigator moves from framing the problem, building evidence, clarifying values and selecting an option to refining the solution, documenting it and decomposing its specification. Court-style adversarial review is the selection method in Stage 5; the other stages protect the quality of the problem definition, evidence, requirements and design.
 
-These are workflow controls and review responsibilities. Structural checks and hashes do not prove factual truth, actual independent contexts or real user acceptance.
+The table connects each stage's operating rules with its methodological perspective. First-principles thinking, Socratic questioning and Occam's razor guide analysis and review; local scripts check the artifact, reference, version and content relationships that can be expressed explicitly.
+
+| Stage | Core methods | Practice and quality contribution |
+|---|---|---|
+| [1. Problem framing](skills/problem-framing/SKILL.md) | **First-principles thinking; problem reframing** | Start from the actual goal, necessary constraints and assumptions needing verification. Separate scope, non-goals and the requested outcome. Ask what must really be achieved, so a proposed solution does not become the problem definition by default. |
+| [2. Research design](skills/research-design-kickoff/SKILL.md) | **Question-driven research; falsifiability; relevance-based organization** | Turn gaps into answerable research questions; for decision tasks, make them distinguish candidates. Define quality bars and stop conditions, and seek both support and counterevidence. Merge or omit themes according to relevance so research informs judgment. |
+| [3. Research execution](skills/research-execution/SKILL.md) | **Critical thinking; evidence classification; independent verification** | Inspect original passages, source independence, dates and versions. Separate facts, inferences, assumptions and unknowns; ground inferences in facts. Repeated retrieval of one article is one source. Make conclusions locatable, challengeable and correctable. |
+| [4. Decision readiness](skills/decision-readiness-interview/SKILL.md) | **Socratic questioning; separation of facts and values** | Ask only about intentions, premises and trade-offs that can change the decision: why a constraint matters or which risks are unacceptable. Reuse existing answers. Research resolves public factual gaps; users clarify their values, avoiding questionnaires without decision impact or requests to guess facts. |
+| [5. Option selection](skills/adversarial-option-selection/SKILL.md) | **Independent thinking; critical thinking; court-style adversarial review** | Freeze criteria, build independent cases, disclose weaknesses and counterevidence, and challenge each candidate. A separate judge who did not advocate decides from the record. Support selection with arguments that withstand scrutiny, avoiding conformity, anchoring and vote counting. |
+| [6. Solution refinement](skills/solution-refinement/SKILL.md) | **First principles; Occam's razor; ablation reasoning; What/How separation** | Derive necessary capabilities from goals and acceptance criteria. Establish What before constraining the How required by the deliverable scope. Examine the necessity of features, components, rules and processes; state dependencies, exceptions and costs. Reduce unsupported assumptions and complexity while preserving the agreed meaning and satisfying the same goals and constraints. |
+| [7. Formal documentation](skills/solution-documentation/SKILL.md) | **Semantic fidelity; separation of concerns; one requirements baseline; traceability** | Accurately express the refined solution. When both product and technical documents are needed, technical design references current requirement and acceptance IDs. Preserve scope, exceptions and risks, and review the actual version to reduce semantic drift, duplicate definitions and delivery of the wrong draft. |
+| [8. Specification decomposition](skills/solution-decomposition/SKILL.md) | **High cohesion and low coupling; purposeful decomposition; explicit interfaces and contracts** | Organize units around distinct goals and responsibilities, with explicit boundaries, interfaces, dependencies and acceptance mappings. Keep related concerns together and make relationships reviewable. Retain one unit when splitting adds no value, avoiding fragmentation and hidden dependencies. |
+
+**Socratic questioning exposes consequential premises.** Examples include: Which goal does this requirement serve? What supports it? What changes if its premise fails? Which exceptions or consequences remain unexamined? Ask when the answer can affect scope, selection or risk, and reuse answers already established.
+
+**Ablation experiments examine necessity and contribution.** During refinement, where relevant, ask what happens if a feature, component or approval step is removed: do the goal and acceptance criteria still hold? That is counterfactual reasoning. When empirical evidence is needed, define the baseline, removed element, controlled conditions and evaluation measures; add a focused evidence question and examine actual experiment records as needed. The current workflow has no built-in engine that automatically runs ablation experiments. An unperformed experiment remains a proposed validation design, not a verified finding.
+
+**Occam's razor constrains unnecessary complexity.** Simplification is conditional on satisfying the goals, evidence and constraints; the shortest solution is not automatically best. Preserve required reliability, safety and exceptions. Do not silently cut accepted requirements or shrink them to an MVP; changes to selection or meaning return to the appropriate stage.
+
+Principles that apply throughout the workflow also include:
+
+- **Maintain independent thinking and revise judgments.** User preference, authority, model confidence and multi-role agreement do not prove facts. Apply consistent standards to supporting and opposing evidence, and revise conclusions when counterevidence warrants it.
+- **Match depth to the problem.** General problems focus on mechanisms, stakeholders and constraints; product/software work trims What and How to the requested scope. `UNDERSTAND` completes its report at Stage 3; `DECIDE` continues through decision and design. Stage 8 runs only when a specification package is in scope.
+- **Keep stage responsibilities focused and handoffs explicit.** Research design, evidence gathering, value clarification, selection, semantic refinement and documentation have distinct responsibilities, connected by stable artifact references and versions.
+- **Preserve traceability, correction and honest acceptance.** Factual corrections reopen affected research, retain counts and invalidate stale downstream references. Drafting permission produces a preview; acceptance applies to the actual document version reviewed.
+
+These methods require careful host execution and judgment. Structural checks and hashes establish record consistency; they do not prove factual truth, that an experiment occurred, optimal architecture, actual context isolation or real user acceptance.
 
 ## How the court stays separate
 
