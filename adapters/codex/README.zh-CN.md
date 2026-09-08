@@ -18,11 +18,11 @@ codex plugin add problem-navigator@problem-navigator
 
 随后**新建启用插件的 Codex 任务**。命令取决于已安装 Codex 的支持情况，必要时查看 `codex plugin --help`。官方[插件测试指南](https://developers.openai.com/plugins/deploy/connect-chatgpt)说明了本地市场安装与新会话测试流程。
 
-使用唯一发行包 `problem-navigator-2.1.0.zip`，无需另下 Codex 包。发行包市场目录指向自身根目录（`source.path: "."`）；源仓库市场目录指向生成的 `plugins/problem-navigator/` 镜像。两者使用上述相同市场/插件名称。
+使用公开仓库的克隆副本或唯一发行包 `problem-navigator-2.1.0.zip`，无需另下 Codex 包。两种布局的市场目录都指向安装根目录（`source.path: "."`），并使用上述市场/插件名称。
 
 首次依赖同步可能下载包。`.codex-plugin/plugin.json` 中内联的 `mcpServers` 对象通过 `uv` 启动共享本地 stdio 服务，不使用独立 `.mcp.json`。技能与 MCP 核心只包含一份，也支持具备所需能力的其他宿主直接加载。
 
-源仓库中，`adapters/codex/` 管理此适配的元数据与指南；`plugins/problem-navigator/` 是生成目录，不应直接编辑。本指南在源仓库与发行包中都位于 `adapters/codex/`。通用用法见[主 README](../../README.zh-CN.md)。
+本指南在公开仓库与发行包中都位于 `adapters/codex/`。通用用法见[主 README](../../README.zh-CN.md)。
 
 ## 无需密钥即可开始
 
@@ -84,6 +84,6 @@ codex plugin add problem-navigator@problem-navigator
 - 认证/额度/网络错误：检查所选服务商账户或连接，仅分享安全错误码与请求 ID。
 - 工作流产物缺失/过期：保留文件，明确请求从有效保留输入重新生成，不虚构历史或重置计数。
 
-自动检查覆盖结构、模拟服务商、工作流控制、打包与 stdio 注册，不能证明线上服务或已安装 Codex 的完整端到端体验通过。源仓库提供详细验证命令与实际运行报告；ZIP 是运行载荷。
+自动检查覆盖结构、模拟服务商、工作流控制、打包与 stdio 注册，不能证明线上服务或已安装 Codex 的完整端到端体验通过。
 
 采用 MIT 许可证；解压后的压缩包包含 `LICENSE` 与 `NOTICE.md`。问题反馈中不要携带凭据。若仓库平台启用了私密漏洞报告，请使用该渠道；否则先请求私密渠道，不要公开漏洞细节或秘密。

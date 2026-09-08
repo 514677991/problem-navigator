@@ -1,6 +1,0 @@
-interface:
-  display_name: "Research Execution"
-  short_description: "Execute or recover a bounded evidence brief"
-  default_prompt: "Use $research-execution to execute the current workflow's research brief and produce one traceable evidence package."
-policy:
-  allow_implicit_invocation: false

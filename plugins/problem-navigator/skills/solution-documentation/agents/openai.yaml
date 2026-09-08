@@ -1,6 +1,0 @@
-interface:
-  display_name: "Solution Documentation"
-  short_description: "Create accepted formal solution documents from frozen semantics"
-  default_prompt: "Use $solution-documentation to project the accepted solution into its formal report or document package."
-policy:
-  allow_implicit_invocation: false

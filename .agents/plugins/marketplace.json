@@ -8,7 +8,7 @@
       "name": "problem-navigator",
       "source": {
         "source": "local",
-        "path": "./plugins/problem-navigator"
+        "path": "."
       },
       "policy": {
         "installation": "AVAILABLE",

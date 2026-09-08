@@ -18,11 +18,11 @@ codex plugin add problem-navigator@problem-navigator
 
 Start a **new Codex task with the plugin enabled**. Commands depend on support in your installed Codex; inspect `codex plugin --help` when needed. The official [plugin testing guide](https://developers.openai.com/plugins/deploy/connect-chatgpt) describes installing from a local marketplace and testing in a new conversation.
 
-Use the single release archive `problem-navigator-2.1.0.zip`; no separate Codex download is needed. The archive catalog points to its own root (`source.path: "."`). The source repository's catalog points to the generated `plugins/problem-navigator/` mirror. Both use the same marketplace/plugin name shown above.
+Use a clone of the public repository or the single release archive `problem-navigator-2.1.0.zip`; no separate Codex download is needed. In both layouts, the catalog points to the installation root (`source.path: "."`) and uses the marketplace/plugin name shown above.
 
 The first dependency sync may download packages. The inline `mcpServers` object in `.codex-plugin/plugin.json` launches the shared local stdio server through `uv`. The bundle does not use an independent `.mcp.json`. Skills and MCP core are included once and also support direct loading in other capable hosts.
 
-In the source repository, `adapters/codex/` owns this adapter's metadata and guides; `plugins/problem-navigator/` is generated and should not be edited directly. This guide has the same `adapters/codex/` path in the source repository and release archive. See the [main README](../../README.md) for general use.
+This guide has the same `adapters/codex/` path in the public repository and release archive. See the [main README](../../README.md) for general use.
 
 ## Start without keys
 
@@ -84,6 +84,6 @@ You supply any Codex/model access and pay applicable provider charges. The local
 - Authentication/quota/network errors: check the selected provider's account or connectivity. Share only safe error codes and request IDs.
 - Missing/stale workflow artifacts: preserve files and request explicit regeneration from valid retained inputs; do not invent history or reset counters.
 
-Automated checks cover schemas, mocked providers, workflow controls, packaging, and stdio registration. They do not establish live provider service or successful installed-Codex end-to-end use. The source repository includes detailed verification commands and actual run reports; the ZIP is a runtime payload.
+Automated checks cover schemas, mocked providers, workflow controls, packaging, and stdio registration. They do not establish live provider service or successful installed-Codex end-to-end use.
 
 Licensed under MIT; the extracted archive includes `LICENSE` and `NOTICE.md`. Keep credentials out of issue reports. Use the repository host's private vulnerability reporting if enabled; otherwise request a private channel without exposing vulnerability details or secrets publicly.

@@ -1,6 +1,0 @@
-interface:
-  display_name: "Research Design Kickoff"
-  short_description: "Design a bounded, traceable research brief"
-  default_prompt: "Use $research-design-kickoff to design the current workflow's research brief without executing it."
-policy:
-  allow_implicit_invocation: false

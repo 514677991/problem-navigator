@@ -1,6 +1,0 @@
-interface:
-  display_name: "Adversarial Option Selection"
-  short_description: "Select candidates with truthful conditional challenge"
-  default_prompt: "Use $adversarial-option-selection to select from the current validated DECIDE candidates."
-policy:
-  allow_implicit_invocation: false
