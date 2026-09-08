@@ -1,4 +1,4 @@
-# Evidence package semantic gate 2.1
+# Evidence package semantic gate 2.2
 
 Read workflow-control.md. Schema validation precedes workflow_control.validate_evidence;
 first execution initializes its draft before this gate. Before publishing an accepted
@@ -31,3 +31,16 @@ identity, revision, ownership and reference closure; hosts must still evaluate f
 
 On corruption stop with MISSING_OR_INVALID_ARTIFACT and known task IDs, preserving counts
 and artifacts; use shared explicit recovery rather than guessing.
+
+The 2.2 executable gate additionally requires current problem_frame_id/version in the
+brief; explicit candidate-by-theme support or candidate/task limitation (all themes at
+publication, only fully finished themes in a draft); INFERENCE
+basis_evidence_ids closing to FACT; and passage_locator for critical: true facts.
+UNKNOWN/ASSUMPTION alone cannot establish supported completion. Reopen follows explicit
+inference dependencies, while the host must identify other affected prose claims.
+
+Before publishing readiness, validate-readiness checks every limitation disposition
+exactly once and rejects READY when a material limitation remains. Before a decision,
+validate-decision checks the required DIRECT/TEAM/MANUAL_SESSIONS review and actual sealed
+court case. Neither command proves truth, actual user acceptance or genuine host isolation.
+Keep court bodies outside main; use safe CLI receipts and the final neutral outcome only.

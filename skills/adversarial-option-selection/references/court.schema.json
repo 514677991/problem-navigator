@@ -1,0 +1,853 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://problem-navigator.local/court.schema.json",
+  "$defs": {
+    "host_declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "TEAM",
+            "MANUAL_SESSIONS"
+          ]
+        },
+        "team_support": {
+          "enum": [
+            "SUPPORTED",
+            "UNSUPPORTED"
+          ]
+        },
+        "team_enabled": {
+          "type": "boolean"
+        },
+        "capability_basis": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "coordinator_context_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 192,
+          "pattern": "^[^\\r\\n]+$"
+        },
+        "main_context_clean": {
+          "const": true
+        }
+      },
+      "required": [
+        "mode",
+        "team_support",
+        "team_enabled",
+        "capability_basis",
+        "coordinator_context_id",
+        "main_context_clean"
+      ]
+    },
+    "descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "ref",
+        "sha256"
+      ]
+    },
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "kind": {
+          "enum": [
+            "ADVOCATE",
+            "REDTEAM",
+            "FEASIBILITY",
+            "JUDGE"
+          ]
+        },
+        "candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "role_id",
+        "kind",
+        "candidate_ids"
+      ]
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "case_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "host_declaration": {
+          "$ref": "#/$defs/host_declaration"
+        },
+        "input_hashes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "workflow": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "problem_frame": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "research_brief": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "evidence_package": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "readiness_pack": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "workflow",
+            "problem_frame",
+            "research_brief",
+            "evidence_package",
+            "readiness_pack"
+          ]
+        },
+        "snapshot": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "theme_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/role"
+          },
+          "minItems": 4,
+          "uniqueItems": true
+        },
+        "max_rounds": {
+          "const": 2
+        },
+        "expression_budget_chars": {
+          "type": "integer",
+          "minimum": 24000,
+          "maximum": 280000
+        },
+        "integrity_boundary": {
+          "const": "HOST_DECLARED_CONTEXTS_AND_CAPABILITY; LOCAL_HASHES_NOT_EXTERNAL_ATTESTATION"
+        },
+        "workflow_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "workflow_id",
+        "host_declaration",
+        "input_hashes",
+        "snapshot",
+        "candidate_ids",
+        "theme_ids",
+        "roles",
+        "max_rounds",
+        "expression_budget_chars",
+        "integrity_boundary",
+        "workflow_ref"
+      ]
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "evidence_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "limitation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "claim_id",
+        "statement",
+        "evidence_item_ids",
+        "limitation_ids"
+      ]
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "enum": [
+            "mechanism",
+            "capabilities",
+            "interfaces",
+            "adaptability",
+            "total_cost",
+            "failure_conditions",
+            "combination"
+          ]
+        },
+        "assessment": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "evidence_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "limitation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "dimension",
+        "assessment",
+        "evidence_item_ids",
+        "limitation_ids"
+      ]
+    },
+    "paper": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "case_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "role_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "context_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 192,
+          "pattern": "^[^\\r\\n]+$"
+        },
+        "isolated_context": {
+          "const": true
+        },
+        "main_context_clean": {
+          "const": true
+        },
+        "input_packet_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/claim"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dimension"
+          },
+          "minItems": 7,
+          "uniqueItems": true
+        },
+        "failure_conditions": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "uncertainties": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "alternative_test": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "combination_test": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "record_id",
+        "role_id",
+        "context_id",
+        "isolated_context",
+        "main_context_clean",
+        "input_packet_sha256",
+        "candidate_ids",
+        "claims",
+        "dimensions",
+        "failure_conditions",
+        "uncertainties"
+      ]
+    },
+    "challenge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "challenge_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "target_paper_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "target_claim_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "theme_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 1200
+        },
+        "evidence_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "limitation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "prior_challenge_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "kind": {
+          "enum": [
+            "CHALLENGE",
+            "NO_MATERIAL_OBJECTION"
+          ]
+        }
+      },
+      "required": [
+        "challenge_id",
+        "target_paper_id",
+        "target_claim_id",
+        "theme_id",
+        "question",
+        "evidence_item_ids",
+        "limitation_ids",
+        "kind"
+      ]
+    },
+    "challenge_submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "case_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "role_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "context_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 192,
+          "pattern": "^[^\\r\\n]+$"
+        },
+        "isolated_context": {
+          "const": true
+        },
+        "main_context_clean": {
+          "const": true
+        },
+        "input_packet_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "challenges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/challenge"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "record_id",
+        "role_id",
+        "context_id",
+        "isolated_context",
+        "main_context_clean",
+        "input_packet_sha256",
+        "challenges"
+      ]
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "challenge_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "disposition": {
+          "enum": [
+            "ACKNOWLEDGED",
+            "REBUTTED",
+            "NEEDS_RESEARCH",
+            "NEEDS_VALUE",
+            "UNRESOLVED",
+            "WITHDRAWN"
+          ]
+        },
+        "response": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 1200
+        },
+        "evidence_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "limitation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "withdrawn_claim_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "challenge_id",
+        "disposition",
+        "response",
+        "evidence_item_ids",
+        "limitation_ids",
+        "withdrawn_claim_ids"
+      ]
+    },
+    "response_submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "case_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "role_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "context_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 192,
+          "pattern": "^[^\\r\\n]+$"
+        },
+        "isolated_context": {
+          "const": true
+        },
+        "main_context_clean": {
+          "const": true
+        },
+        "input_packet_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "record_id",
+        "role_id",
+        "context_id",
+        "isolated_context",
+        "main_context_clean",
+        "input_packet_sha256",
+        "responses"
+      ]
+    },
+    "neutral_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "SELECTED",
+            "NEEDS_RESEARCH",
+            "NEEDS_READINESS",
+            "STOPPED"
+          ]
+        },
+        "selected_candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "status",
+        "selected_candidate_ids",
+        "rationale"
+      ]
+    },
+    "rejected_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "claim_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "candidate_id",
+        "reason",
+        "claim_ids"
+      ]
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "case_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "role_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "context_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 192,
+          "pattern": "^[^\\r\\n]+$"
+        },
+        "isolated_context": {
+          "const": true
+        },
+        "main_context_clean": {
+          "const": true
+        },
+        "input_packet_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "outcome": {
+          "enum": [
+            "SELECTED",
+            "NEEDS_RESEARCH",
+            "NEEDS_READINESS",
+            "STOPPED"
+          ]
+        },
+        "reviewed_record_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "surviving_claim_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "rejected_candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rejected_candidate"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "unresolved_challenge_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "neutral_summary": {
+          "$ref": "#/$defs/neutral_summary"
+        },
+        "residual_dispositions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/residual_disposition"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "record_id",
+        "role_id",
+        "context_id",
+        "isolated_context",
+        "main_context_clean",
+        "input_packet_sha256",
+        "outcome",
+        "reviewed_record_ids",
+        "surviving_claim_ids",
+        "rejected_candidates",
+        "unresolved_challenge_ids",
+        "neutral_summary",
+        "residual_dispositions"
+      ]
+    },
+    "residual_disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "challenge_id",
+        "disposition",
+        "reason",
+        "evidence_item_ids",
+        "limitation_ids"
+      ],
+      "properties": {
+        "challenge_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$"
+        },
+        "disposition": {
+          "enum": [
+            "NON_BLOCKING",
+            "NEEDS_RESEARCH",
+            "NEEDS_READINESS"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "maxLength": 1200
+        },
+        "evidence_item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "limitation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

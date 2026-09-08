@@ -1,6 +1,6 @@
 # Host integration instructions / 宿主集成说明
 
-This file travels with the single release bundle, `problem-navigator-2.1.0.zip`. It describes host responsibilities for the shared workflow. The same bundle includes optional Codex metadata and the guide at `adapters/codex/README.md`; shared skills/MCP files are included once. / 本文件随唯一发行包 `problem-navigator-2.1.0.zip` 提供，说明宿主执行共享工作流的职责。同一包包含可选 Codex 元数据及 `adapters/codex/README.zh-CN.md` 指南，共享技能/MCP 文件仅一份。
+This file travels with the single release bundle, `problem-navigator-2.2.0.zip`. It describes host responsibilities for the shared workflow. The same bundle includes optional Codex metadata and the guide at `adapters/codex/README.md`; shared skills/MCP files are included once. / 本文件随唯一发行包 `problem-navigator-2.2.0.zip` 提供，说明宿主执行共享工作流的职责。同一包包含可选 Codex 元数据及 `adapters/codex/README.zh-CN.md` 指南，共享技能/MCP 文件仅一份。
 
 ## Full workflow requirements / 完整工作流要求
 
@@ -10,6 +10,7 @@ The AI host must be able to: / AI 宿主需要能够：
 2. Read/write a user-selected analysis workspace, preserve linked YAML artifacts, and run Python 3.11+ helpers through `uv`. / 读写用户指定的分析工作区，保留引用的 YAML 产物，并通过 `uv` 执行 Python 3.11+ 工具。
 3. Ask material clarification questions and obtain actual acceptance of reviewed documents, preserving language preferences and existing authorization. / 澄清关键问题，取得对已审阅文档的真实接受，保留语言偏好与已有授权。
 4. For Web research, use compatible discovered research tools within the authorized scope. / 网页研究时，在授权范围内使用发现的兼容研究工具。
+5. For court review, use enabled Agent Team when supported; otherwise operate real independent manual Sessions and keep argument bodies out of main. / 法庭审查中，支持 Agent Team 必须启用并使用，否则以真实独立 Session 手动执行，让立场与辩论正文留在主会话之外。
 
 Plain chat cannot execute the full workflow. MCP alone provides research tools; it does not inject these skills, run the state machine, or create the document acceptance process. / 纯聊天不能执行完整工作流。MCP 本身只提供研究工具，不会注入技能、执行状态机或建立文档接受过程。
 
@@ -42,6 +43,22 @@ skills/solution-decomposition/SKILL.md
 The entry owns create/resume and routing; load later stages when directed. Hosts may implement discovery or explicit file reads. No `$`/`/` invocation syntax is required. Do not copy only a short summary of the skill and treat it as the entire workflow. / 入口负责创建/续接与路由，按其指示加载后续阶段。宿主可通过技能发现或明确读取文件实现，不要求 `$`/`/` 调用语法。不要仅复制短摘要并当作完整工作流。
 
 Use the entry's local helper and the paths specified by the workflow contract. Resolve installation paths independently of the current working directory. Save state under the analysis workspace's `.problem-navigator/workflows/` and preserve referenced artifacts. Never run concurrent writers on one workflow. / 按工作流契约使用入口本地工具和路径，安装路径解析不依赖当前工作目录。状态保存在分析工作区的 `.problem-navigator/workflows/`，保留引用产物；同一工作流禁止并发写入。
+
+## Required court isolation / 必需的法庭隔离
+
+Multiple candidates or an accepted frame with court_required true require court. DIRECT is valid only with at most one candidate and no such requirement. Supported Team must be enabled/recovered and used; a disabled feature or temporary failure is not UNSUPPORTED. Only genuine absence permits MANUAL_SESSIONS. There is no single-session court fallback. / 多候选或已确认 frame.court_required 为 true 时必须走法庭。DIRECT 仅在至多一个候选且没有该要求时合法。支持 Team 必须启用或恢复后使用，被禁用或暂时故障不等于 UNSUPPORTED；只有真实不支持才允许 MANUAL_SESSIONS，不允许单会话法庭降级。
+
+Read the complete [court protocol](skills/adversarial-option-selection/references/court-protocol.md), [copy-ready role instructions](skills/adversarial-option-selection/references/role-packets.md) and court schema. The local court_control.py helper prepares neutral snapshots and packets containing submission schemas/templates, seals records and emits safe receipts. It does not spawn agents or prove host capabilities. / 完整读取[法庭协议](skills/adversarial-option-selection/references/court-protocol.md)、[可复制角色说明](skills/adversarial-option-selection/references/role-packets.md)及法庭结构。本地 court_control.py 准备中性快照和含提交结构/模板的角色包，封存记录并返回安全回执；它不代替宿主创建 Agent，也不证明宿主能力。
+
+Each candidate has an advocate; independent redteam and feasibility roles scrutinize every candidate. All complete independent papers must finish and seal before anyone reads peer arguments. Run one or two balanced rounds, the second only for unresolved material issues. A separate fresh judge reads the corpus after exchange and did not participate earlier. Roles may queue. / 每候选有倡导者，独立红队和可行性角色逐候选审视。所有完整独立初稿收齐封存后，才允许读取其他立场。进行一至两轮对等质询，第二轮只处理重要遗留问题；新的独立法官在交换结束后读取完整记录，未参与前面的立论与辩论。并发受限时角色可以排队。
+
+Start each role with only its neutral packet, without inherited main history or earlier conclusions. Participants retain their own contexts after the independent phase; the judge starts fresh. Main coordinates, never judges: it receives only safe status, IDs, refs/hashes, routing needs and the final validated neutral outcome. Automatic full-result forwarding also violates this boundary. / 每角色只从中性输入包启动，不继承主会话或早先结论。独立立论后，参与者在自己的上下文继续；法官另起干净上下文。主会话只协调，不担任法官，只收安全状态、ID、引用/哈希、路由需求和最终通过校验的中性结论。自动转发完整结果也违反这一边界。
+
+In manual mode, open actual separate Sessions and transfer generated packets directly. Prefer native context IDs; when absent, user-registered unique labels can map to real Sessions. If an external Session cannot write shared files, it may return its complete schema-valid submission directly to the user in that external Session for saving and transfer. Never forward that body into main. Main receives only the saved-file receipt. Labels do not create independence; missing isolation or transfer capability blocks court. / 手动模式中，打开真实不同的 Session，直接转交生成的输入包。优先使用宿主上下文 ID；没有 ID 时可登记唯一标签对应真实会话。外部 Session 无法写共享文件时，可在该外部会话直接向用户返回完整合法提交，供保存与转交；正文绝不转发到主会话，主会话只收已保存文件的回执。标签本身不创造独立性，缺少隔离或传递能力时应阻塞法庭。
+
+Only the coordinator changes canonical workflow/evidence/readiness/decision files and seals the case. Workers write assigned submissions and request missing facts or values. New facts return to existing research authorization/budget/revision controls; values return to readiness. On leakage invalidate and preserve the case, then restart with clean contexts; main contamination also requires a clean coordinator. / 只有协调者修改规范工作流、证据、决策条件和决策文件并执行封存。角色只写自己的提交并请求事实或价值补充。新事实回到现有研究授权、预算和版本控制，价值问题回到决策准备。泄漏后撤销该次法庭并保留记录，用干净上下文重新开始；主会话受污染时，协调会话也需要更换。
+
+Before publication use validate-readiness and validate-decision with the actual project root. Decision review records TEAM or MANUAL_SESSIONS plus case_ref, or permitted DIRECT plus reason. validate-document checks accepted member bytes against member_hashes and declared requirement traces. Missing current frame/review bindings require truthful regeneration, not guessed metadata. These checks prove consistency and bytes; actual isolation, factual support and acceptance still require truthful host/user observation and review. / 发布前使用真实项目根目录执行 validate-readiness 与 validate-decision。决策记录 TEAM 或 MANUAL_SESSIONS 及 case_ref，或合法 DIRECT 及 reason。validate-document 核对已接受成员与 member_hashes、所声明需求追踪。缺少当前 frame/review 关联时应据实重新生成，不能猜补字段。这些检查只证明一致性与字节，实际隔离、事实支持和接受仍依赖宿主/用户真实观察与审查。
 
 ## Optional stdio MCP connection / 可选 stdio MCP 连接
 

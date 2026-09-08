@@ -19,7 +19,9 @@ When it is this stage, validate the workflow, current `problem_frame`, current
 `evidence_package`, and current `decision` against `../problem-navigator/references/artifacts.schema.json`.
 They must share one workflow ID; the frame must be `DECIDE`; the decision must be
 `SELECTED`, cite the current readiness/evidence revision, and select only supported
-candidates. Missing, unreadable, invalid, stale, or mismatched input is not a prompt
+candidates. Validate current readiness and decision review through the shared helper,
+including actual court case integrity on disk. Read only safe review receipts and the
+final neutral decision; never load court papers or debate into main. Missing, unreadable, invalid, stale, or mismatched input is not a prompt
 to reconstruct it. Atomically preserve the research state, set `next_stage: STOPPED`,
 and write:
 
@@ -64,7 +66,8 @@ permission to draft, not evidence that the user already reviewed the new content
   behavior, system constraints, alternatives, selected design and validation criteria.
   Omit irrelevant product-market/UI requirements and do not invent a PRD baseline.
 - Other `PRODUCT_SOFTWARE`: freeze **What** first—value, target users, in/out of scope,
-  stable requirement IDs, and acceptance IDs. Only then freeze **How** under those
+  stable requirement IDs, and acceptance IDs. Record declared requirement IDs/statements in optional requirements entries
+  {requirement_id, statement} for executable document trace checks. Only then freeze **How** under those
   constraints—system boundary, architecture direction, data/interface boundary,
   quality attributes, and operating constraints. Technical convenience may constrain
   feasibility; it must not redefine the product value or What.

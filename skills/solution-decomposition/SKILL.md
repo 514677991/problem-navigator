@@ -15,7 +15,9 @@ Run only when the validated workflow has `next_stage: solution-decomposition`. I
 does not, return to `problem-navigator` and mutate nothing. Validate the workflow
 and accepted `solution_document` against `../problem-navigator/references/artifacts.schema.json`; workflow
 ID, document ID/version, profile, accepted status, and all member paths must match
-the current artifact reference. Any missing, unreadable, invalid, stale, or mismatched
+the current artifact reference. Validate actual accepted member bytes against their
+member_hashes; keep declared requirement traces closed. A metadata-only envelope check
+is insufficient. Any missing, unreadable, invalid, stale, or mismatched
 input atomically sets `next_stage: STOPPED` with:
 
 ```yaml

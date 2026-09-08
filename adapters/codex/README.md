@@ -2,7 +2,7 @@
 
 # Problem Navigator — Codex adapter
 
-This is the Codex adapter for the general-purpose Problem Navigator plugin, release `2.1.0`, with local Web Research MCP `0.2.0`. The shared skills and Python/MCP core can also be integrated with other capable hosts; this guide covers only Codex. Turn general or product/software problems into evidence-backed reports and design specifications in Chinese or English. The workflow ends at analysis/design and does not generate implementation code or deploy a system.
+This is the Codex adapter for the general-purpose Problem Navigator plugin, release `2.2.0`, with local Web Research MCP `0.2.0`. The shared skills and Python/MCP core can also be integrated with other capable hosts; this guide covers only Codex. Turn general or product/software problems into evidence-backed reports and design specifications in Chinese or English. The workflow ends at analysis/design and does not generate implementation code or deploy a system.
 
 ## Enable the Codex adapter
 
@@ -18,11 +18,21 @@ codex plugin add problem-navigator@problem-navigator
 
 Start a **new Codex task with the plugin enabled**. Commands depend on support in your installed Codex; inspect `codex plugin --help` when needed. The official [plugin testing guide](https://developers.openai.com/plugins/deploy/connect-chatgpt) describes installing from a local marketplace and testing in a new conversation.
 
-Use a clone of the public repository or the single release archive `problem-navigator-2.1.0.zip`; no separate Codex download is needed. In both layouts, the catalog points to the installation root (`source.path: "."`) and uses the marketplace/plugin name shown above.
+Use the single release archive `problem-navigator-2.2.0.zip`; no separate Codex download is needed. The archive catalog points to its own root (`source.path: "."`). Use the archive-root catalog and the marketplace/plugin name shown above.
 
 The first dependency sync may download packages. The inline `mcpServers` object in `.codex-plugin/plugin.json` launches the shared local stdio server through `uv`. The bundle does not use an independent `.mcp.json`. Skills and MCP core are included once and also support direct loading in other capable hosts.
 
-This guide has the same `adapters/codex/` path in the public repository and release archive. See the [main README](../../README.md) for general use.
+Keep the bundle layout intact; this guide is located at `adapters/codex/`. See the [main README](../../README.md) for general use.
+
+## Isolated court in Codex
+
+Multiple candidates or accepted court requirements need supported Agent Team/independent agents. Enable or recover disabled or temporarily failing support. Only actual absence permits manual independent Sessions; there is no single-session court fallback.
+
+Start clean role contexts without inheriting the parent task transcript. Every advocate, redteam and feasibility reviewer finishes a full independent paper before the complete set is sealed and exchanged. After one or two bounded rounds, a fresh judge reads the corpus, separate from main and all participants. Queue independent roles when slots are limited.
+
+Workers save full submissions to assigned files and return only safe status, IDs and refs/hashes. Main coordinates and reads the final validated neutral outcome; it never receives arguments or judges them. Automatic replies must respect that boundary. Detected leakage invalidates the case and requires a clean restart.
+
+In manual mode, the user opens real separate Sessions and transfers packets/submissions directly. If a role cannot write files, it may return the full submission directly to the user in that external Session for saving; never forward it to main. Prefer native context IDs, otherwise register a unique label for each real Session. See [host instructions](../../HOST_INSTRUCTIONS.md), the [court protocol](../../skills/adversarial-option-selection/references/court-protocol.md) and [copy-ready role instructions](../../skills/adversarial-option-selection/references/role-packets.md). Runtime checks verify links/hashes and declarations, not actual independence or factual truth.
 
 ## Start without keys
 
@@ -84,6 +94,6 @@ You supply any Codex/model access and pay applicable provider charges. The local
 - Authentication/quota/network errors: check the selected provider's account or connectivity. Share only safe error codes and request IDs.
 - Missing/stale workflow artifacts: preserve files and request explicit regeneration from valid retained inputs; do not invent history or reset counters.
 
-Automated checks cover schemas, mocked providers, workflow controls, packaging, and stdio registration. They do not establish live provider service or successful installed-Codex end-to-end use.
+Automated checks cover schemas, mocked providers, workflow controls, packaging, and stdio registration. They do not establish live provider service or successful installed-Codex end-to-end use. The ZIP contains the resources needed at runtime; record the behavior actually observed in your host.
 
 Licensed under MIT; the extracted archive includes `LICENSE` and `NOTICE.md`. Keep credentials out of issue reports. Use the repository host's private vulnerability reporting if enabled; otherwise request a private channel without exposing vulnerability details or secrets publicly.

@@ -55,7 +55,11 @@ evidence and offers a concrete user-approved higher total; never reset counts.
 ## Publish
 
 READY requires complete limitation dispositions, known decision-changing values and no
-remaining material fact/correction gap. Write readiness_pack with current brief/evidence
+remaining material fact/correction gap. The executable gate requires exactly one known
+disposition per limitation and rejects READY with ESCALATED, CORRECTION_REQUESTED or
+any still may_change_decision: true limitation, even if labeled ACCEPTED. Correct the
+evidence assessment through its producer; do not relabel material uncertainty to pass.
+Run validate-readiness --readiness <proposed relative YAML> before publishing. Write readiness_pack with current brief/evidence
 revision, identity/version, status READY, dispositions and value_conditions; then set its
 workflow ref and next_stage: adversarial-option-selection. Preserve backend/evidence/counts.
 Unresolvable values use status STOPPED and full UNRESOLVABLE_READINESS reason/task IDs.

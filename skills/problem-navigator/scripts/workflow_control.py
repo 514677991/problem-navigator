@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -40,6 +42,10 @@ def _boundary(workflow: dict, frame: dict, brief: dict) -> dict[str, dict]:
         if value.get('analysis_goal') != workflow.get('analysis_goal'):
             raise ValueError('GOAL_MISMATCH')
     tasks = _unique(brief['tasks'], 'task_id')
+    if (brief['problem_frame_id'], brief['problem_frame_version']) != (frame['problem_frame_id'], frame['problem_frame_version']):
+        raise ValueError('FRAME_BINDING_MISMATCH')
+    if frame['user_confirmation_status'] != 'ACCEPTED':
+        raise ValueError('FRAME_NOT_ACCEPTED')
     if {'evidence_draft', 'evidence_package'} <= set(workflow['artifact_refs']):
         raise ValueError('AMBIGUOUS_EVIDENCE_REFS')
     if set(tasks) != set(workflow['call_counts']):
@@ -79,7 +85,7 @@ def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict) 
         if normalize_public_url(source['normalized_url']) != source['normalized_url']:
             raise ValueError('SOURCE_URL_NOT_NORMALIZED')
     external = _unique(evidence['external_sources'], 'external_source_id')
-    _unique(evidence['evidence_items'], 'evidence_item_id')
+    items = _unique(evidence['evidence_items'], 'evidence_item_id')
     _unique(evidence['limitations'], 'limitation_id')
     candidates = _unique(evidence.get('candidates', []), 'candidate_id')
     source_owners: dict[str, str] = {}
@@ -114,12 +120,14 @@ def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict) 
         raise ValueError('ORPHAN_SOURCE')
     supported: set[str] = set()
     limited: set[str] = set()
+    candidate_themes: set[tuple[str, str]] = set()
     for limitation in evidence['limitations']:
         tids = set(limitation['affected_task_ids'])
         cids = set(limitation['affected_candidate_ids'])
         if not tids <= set(tasks) or not cids <= set(candidates):
             raise ValueError('LIMITATION_REFERENCE_MISMATCH')
         limited.update(tids)
+        candidate_themes.update((cid, tasks[tid]['theme_id']) for cid in cids for tid in tids)
     for item in evidence['evidence_items']:
         task_id = item['task_id']
         if task_id not in receipts:
@@ -130,12 +138,21 @@ def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict) 
             raise ValueError('SOURCE_TASK_MISMATCH')
         if item['kind'] in ('ASSUMPTION', 'UNKNOWN') and task_id not in limited:
             raise ValueError('EVIDENCE_LIMITATION_MISSING')
+        if item['kind'] == 'INFERENCE':
+            if any(eid not in items or items[eid]['kind'] != 'FACT' for eid in item['basis_evidence_ids']):
+                raise ValueError('INFERENCE_BASIS_MISMATCH')
+        if item['kind'] in ('FACT', 'INFERENCE'):
+            candidate_themes.update((cid, tasks[task_id]['theme_id']) for cid in item.get('candidate_ids', []))
         supported.add(task_id)
     for task_id, receipt in receipts.items():
         if receipt['outcome'] == 'WITH_RESULTS' and task_id not in supported:
             raise ValueError('EVIDENCE_SUPPORT_MISSING')
         if (receipt['outcome'] != 'WITH_RESULTS' or not receipt['quality_met']) and task_id not in limited:
             raise ValueError('RECEIPT_LIMITATION_MISSING')
+    unfinished_themes = {tasks[tid]['theme_id'] for tid in unfinished}
+    required_themes = {(cid, tasks[tid]['theme_id']) for cid in candidates for tid in receipts if tasks[tid]['theme_id'] not in unfinished_themes}
+    if not required_themes <= candidate_themes:
+        raise ValueError('CANDIDATE_THEME_COVERAGE_MISSING')
     if not is_draft:
         state = 'RESEARCH_COMPLETE' if all(r['outcome'] == 'WITH_RESULTS' and r['quality_met'] for r in receipts.values()) else 'RESEARCH_PARTIAL'
         if evidence['research_state'] != state:
@@ -204,6 +221,15 @@ def reopen_research(workflow: dict, frame: dict, brief: dict, evidence: dict, ta
     if not reason.strip() or not ids or len(ids) != len(task_ids) or not ids <= set(workflow['call_counts']):
         raise ValueError('INVALID_CORRECTION_TASKS_OR_REASON')
     draft = _as_draft(evidence)
+    # A factual correction also invalidates conclusions in other tasks that
+    # explicitly depend on those facts. Reopen their full receipts conservatively.
+    while True:
+        removed_items = {item['evidence_item_id'] for item in draft['evidence_items'] if item['task_id'] in ids}
+        dependent_tasks = {item['task_id'] for item in draft['evidence_items'] if removed_items.intersection(item.get('basis_evidence_ids', []))}
+        expanded = ids | dependent_tasks
+        if expanded == ids:
+            break
+        ids = expanded
     draft['completed_receipts'] = [r for r in draft['completed_receipts'] if r['task_id'] not in ids]
     used_sources = {s for r in draft['completed_receipts'] for s in r['source_ids']}
     used_external = {s for r in draft['completed_receipts'] for s in r['external_source_ids']}
@@ -281,8 +307,52 @@ def reserve_call(workflow: dict, frame: dict, brief: dict, task_id: str, operati
     return updated
 
 
-def validate_document(frame: dict, refined: dict, document: dict) -> None:
-    """Check accepted document metadata before publication; review remains human."""
+def validate_readiness(workflow: dict, frame: dict, brief: dict, evidence: dict, readiness: dict) -> None:
+    """Check current limitation dispositions; factual sufficiency remains reviewed."""
+    validate_evidence(workflow, frame, brief, evidence)
+    validate('readiness_pack', readiness)
+    if workflow['analysis_goal'] != 'DECIDE' or readiness['workflow_id'] != workflow['workflow_id']:
+        raise ValueError('READINESS_WORKFLOW_MISMATCH')
+    if readiness['brief_revision'] != brief['revision'] or readiness['evidence_revision'] != evidence.get('evidence_revision'):
+        raise ValueError('STALE_UPSTREAM_BINDING')
+    limitations = _unique(evidence['limitations'], 'limitation_id')
+    dispositions = _unique(readiness['limitation_dispositions'], 'limitation_id')
+    if set(dispositions) != set(limitations):
+        raise ValueError('LIMITATION_DISPOSITION_COVERAGE_MISMATCH')
+    if readiness['status'] == 'READY':
+        if any(d['disposition'] != 'ACCEPTED' for d in dispositions.values()):
+            raise ValueError('READINESS_UNRESOLVED_LIMITATION')
+        if any(limitation['may_change_decision'] for limitation in limitations.values()):
+            raise ValueError('READINESS_MATERIAL_LIMITATION_UNRESOLVED')
+    if readiness['status'] == 'NEEDS_SUPPLEMENTAL':
+        candidates = {candidate['candidate_id'] for candidate in evidence['candidates']}
+        if not set(readiness['supplemental_request']['affected_candidate_ids']) <= candidates:
+            raise ValueError('SUPPLEMENTAL_BINDING_MISMATCH')
+
+
+def validate_decision(workflow: dict, frame: dict, brief: dict, evidence: dict, readiness: dict, decision: dict, *, project_root: Path | None = None) -> None:
+    """Validate a selected decision against current evidence and its real review."""
+    validate_readiness(workflow, frame, brief, evidence, readiness)
+    validate('decision', decision)
+    if decision['workflow_id'] != workflow['workflow_id']:
+        raise ValueError('WORKFLOW_MISMATCH')
+    if readiness['status'] != 'READY':
+        raise ValueError('READINESS_NOT_READY')
+    if (decision['readiness_pack_id'], decision['readiness_pack_version'], decision['evidence_revision']) != (readiness['readiness_pack_id'], readiness['readiness_pack_version'], evidence['evidence_revision']):
+        raise ValueError('STALE_UPSTREAM_BINDING')
+    if not set(decision['selected_candidate_ids']) <= {candidate['candidate_id'] for candidate in evidence['candidates']}:
+        raise ValueError('DECISION_CANDIDATE_MISMATCH')
+    path = Path(__file__).resolve().parents[2] / 'adversarial-option-selection/scripts/court_control.py'
+    if not path.is_file():
+        raise ValueError('COURT_VALIDATOR_MISSING')
+    spec = importlib.util.spec_from_file_location('problem_navigator_court_control', path)
+    court = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(court)
+    court.validate_decision_review(project_root, workflow, frame, brief, evidence, readiness, decision)
+
+
+def validate_document(frame: dict, refined: dict, document: dict, *, project_root: Path | None = None) -> None:
+    """Check metadata, and frozen files when root is supplied; not prose truth."""
     for name, value in (('problem_frame', frame), ('refined_solution', refined), ('solution_document', document)):
         validate(name, value)
         if value['workflow_id'] != frame['workflow_id']:
@@ -300,9 +370,33 @@ def validate_document(frame: dict, refined: dict, document: dict) -> None:
             raise ValueError('DOCUMENT_ENDPOINT_MISMATCH')
     elif endpoint not in ('FORMAL_DOCUMENT', 'FINAL_SPEC_PACKAGE'):
         raise ValueError('DOCUMENT_ENDPOINT_MISMATCH')
+    requirements = _unique(refined.get('requirements', []), 'requirement_id')
+    traces = document.get('traceability', [])
+    if {trace['requirement_id'] for trace in traces} != set(requirements):
+        raise ValueError('DOCUMENT_TRACE_REQUIREMENT_MISMATCH')
+    if any(trace['member'] not in document['members'] for trace in traces):
+        raise ValueError('DOCUMENT_TRACE_MEMBER_MISMATCH')
+    if 'member_hashes' in document and set(document['member_hashes']) != set(document['members']):
+        raise ValueError('DOCUMENT_MEMBER_HASH_COVERAGE_MISMATCH')
+    if project_root is not None:
+        root = Path(project_root).resolve()
+        if set(document.get('member_hashes', {})) != set(document['members']):
+            raise ValueError('DOCUMENT_MEMBER_HASH_COVERAGE_MISMATCH')
+        contents = {}
+        for member in document['members']:
+            path = _path(root, member)
+            if not path.is_file():
+                raise ValueError('DOCUMENT_MEMBER_MISSING')
+            content = path.read_bytes()
+            if hashlib.sha256(content).hexdigest() != document['member_hashes'][member]:
+                raise ValueError('DOCUMENT_MEMBER_HASH_MISMATCH')
+            contents[member] = content
+        for trace in traces:
+            if trace['locator'] not in contents[trace['member']].decode('utf-8'):
+                raise ValueError('DOCUMENT_TRACE_LOCATOR_MISSING')
 
 
-def resume_stage(workflow: dict, target: str, artifacts: dict[str, dict], *, user_requested: bool = False) -> dict:
+def resume_stage(workflow: dict, target: str, artifacts: dict[str, dict], *, user_requested: bool = False, project_root: Path | None = None) -> dict:
     validate('workflow', workflow)
     if workflow['next_stage'] == 'STOPPED' and not user_requested:
         raise ValueError('EXPLICIT_USER_REQUEST_REQUIRED')
@@ -323,14 +417,14 @@ def resume_stage(workflow: dict, target: str, artifacts: dict[str, dict], *, use
     for child, field, parent, parent_field in checks:
         if child in retained and artifacts[child][field] != artifacts[parent][parent_field]:
             raise ValueError('STALE_UPSTREAM_BINDING')
-    if 'readiness_pack' in retained and artifacts['readiness_pack']['status'] != 'READY':
-        raise ValueError('READINESS_NOT_READY')
+    if 'readiness_pack' in retained:
+        validate_readiness(workflow, artifacts['problem_frame'], artifacts['research_brief'], artifacts['evidence_package'], artifacts['readiness_pack'])
+        if artifacts['readiness_pack']['status'] != 'READY':
+            raise ValueError('READINESS_NOT_READY')
     if 'decision' in retained:
-        candidates = {c['candidate_id'] for c in artifacts['evidence_package'].get('candidates', [])}
-        if not set(artifacts['decision']['selected_candidate_ids']) <= candidates:
-            raise ValueError('DECISION_CANDIDATE_MISMATCH')
+        validate_decision(workflow, artifacts['problem_frame'], artifacts['research_brief'], artifacts['evidence_package'], artifacts['readiness_pack'], artifacts['decision'], project_root=project_root)
     if 'solution_document' in retained:
-        validate_document(artifacts['problem_frame'], artifacts['refined_solution'], artifacts['solution_document'])
+        validate_document(artifacts['problem_frame'], artifacts['refined_solution'], artifacts['solution_document'], project_root=project_root)
         if artifacts['problem_frame']['delivery_endpoint'] != 'FINAL_SPEC_PACKAGE':
             raise ValueError('DECOMPOSITION_NOT_REQUESTED')
     updated = deepcopy(workflow)
@@ -386,6 +480,10 @@ def main() -> None:
     reserve.add_argument('--recovery', action='store_true')
     document_check = sub.add_parser('validate-document')
     document_check.add_argument('--document', required=True)
+    readiness_check = sub.add_parser('validate-readiness')
+    readiness_check.add_argument('--readiness', required=True)
+    decision_check = sub.add_parser('validate-decision')
+    decision_check.add_argument('--decision', required=True)
     publication = sub.add_parser('validate-publication')
     publication.add_argument('--package', required=True)
     args = parser.parse_args()
@@ -402,10 +500,23 @@ def main() -> None:
         print(json.dumps({'publication_valid': True}))
         return
     if args.action == 'validate-document':
-        _boundary(workflow, frame, brief)
+        decision, refined = read('decision'), read('refined_solution')
+        validate_decision(workflow, frame, brief, read('evidence_package'), read('readiness_pack'), decision, project_root=root)
+        if (refined['decision_id'], refined['decision_version']) != (decision['decision_id'], decision['decision_version']):
+            raise ValueError('STALE_UPSTREAM_BINDING')
         document = yaml.safe_load(_path(root, args.document).read_text('utf-8'))
-        validate_document(frame, read('refined_solution'), document)
+        validate_document(frame, refined, document, project_root=root)
         print(json.dumps({'document_valid': True}))
+        return
+    if args.action == 'validate-readiness':
+        readiness = yaml.safe_load(_path(root, args.readiness).read_text('utf-8'))
+        validate_readiness(workflow, frame, brief, read('evidence_package'), readiness)
+        print(json.dumps({'readiness_valid': True, 'status': readiness['status']}))
+        return
+    if args.action == 'validate-decision':
+        decision = yaml.safe_load(_path(root, args.decision).read_text('utf-8'))
+        validate_decision(workflow, frame, brief, read('evidence_package'), read('readiness_pack'), decision, project_root=root)
+        print(json.dumps({'decision_valid': True, 'review_mode': decision['review']['mode']}))
         return
     writes: list[tuple[Path, dict]] = []
     if args.action == 'init':
@@ -421,7 +532,7 @@ def main() -> None:
             writes.append((_path(root, workflow['artifact_refs']['research_brief']), revised))
     elif args.action == 'resume':
         needed = OUTPUTS[:STAGES.index(args.target)]
-        updated = resume_stage(workflow, args.target, {k: read(k) for k in needed}, user_requested=args.user_requested)
+        updated = resume_stage(workflow, args.target, {k: read(k) for k in needed}, user_requested=args.user_requested, project_root=root)
     else:
         evidence = read('evidence_draft')
         validate_evidence(workflow, frame, brief, evidence)

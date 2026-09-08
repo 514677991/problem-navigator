@@ -26,6 +26,8 @@ current code/logs, versions, constraints, actual behavior and validation evidenc
 
 Draft 1–12 initial tasks with stable unique RES-NNN IDs, theme_id, question, quality_bar,
 stop_condition. Prefer primary support and counterevidence. Do not split merely for budget.
+For DECIDE, design questions that can distinguish candidates under the relevant themes;
+record evidence gaps explicitly rather than treating an unstudied candidate as inferior.
 PROVIDED_MATERIAL adds task_kind and accessible project-relative material_refs; it has no
 direction/domains/freshness. Capture conversation facts in a frame/material artifact first.
 PUBLIC_WEB adds task_kind, direction: auto|news|semantic|academic|developer, domains: [],
@@ -36,7 +38,7 @@ Revision-1 tasks have no supplemental_request_id.
 ## Initial handoff
 
 Write research-brief.yaml with schema_version: 1, workflow_id, revision: 1, analysis_goal,
-tasks. Then set workflow's research_brief ref, zero counts for exactly its task IDs and
+problem_frame_id and problem_frame_version copied from the current accepted frame, tasks. Then set workflow's research_brief ref, zero counts for exactly its task IDs and
 next_stage: research-execution. Artifact files first and workflow last. Execution invokes
 the shared init command before requiring its evidence draft. Present the questions but
 only block on a material boundary uncertainty.

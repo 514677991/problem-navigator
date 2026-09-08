@@ -50,6 +50,31 @@ class ProviderTransport:
         json_body: Mapping[str, Any] | None = None,
         deadline: float,
     ) -> dict[str, Any]:
+        remaining = deadline - self._monotonic()
+        if remaining <= 0:
+            raise CoreError(request_id, ErrorCode.NETWORK_ERROR)
+        try:
+            # httpx timeouts apply per I/O operation; this includes stalled reads
+            # and retry waits in the single absolute call deadline.
+            async with asyncio.timeout(remaining):
+                return await self._request_json_with_retry(
+                    method, url, request_id=request_id, headers=headers,
+                    params=params, json_body=json_body, deadline=deadline,
+                )
+        except TimeoutError:
+            raise CoreError(request_id, ErrorCode.NETWORK_ERROR) from None
+
+    async def _request_json_with_retry(
+        self,
+        method: str,
+        url: str,
+        *,
+        request_id: str,
+        headers: Mapping[str, str],
+        params: Mapping[str, str] | None = None,
+        json_body: Mapping[str, Any] | None = None,
+        deadline: float,
+    ) -> dict[str, Any]:
         for attempt in range(2):
             try:
                 response = await self._request_once(

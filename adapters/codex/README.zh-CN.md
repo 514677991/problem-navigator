@@ -2,7 +2,7 @@
 
 # Problem Navigator — Codex 适配
 
-这是通用 Problem Navigator 插件的 Codex 适配，发行版本 `2.1.0`，内置本地 Web Research MCP `0.2.0`。共享技能和 Python/MCP 核心也可集成至具备所需能力的其他宿主；本指南仅介绍 Codex。将通用问题或产品/软件问题整理成有证据支撑的报告与设计规格，支持中文和英文。工作流止于分析/设计，不生成实现代码，也不部署系统。
+这是通用 Problem Navigator 插件的 Codex 适配，发行版本 `2.2.0`，内置本地 Web Research MCP `0.2.0`。共享技能和 Python/MCP 核心也可集成至具备所需能力的其他宿主；本指南仅介绍 Codex。将通用问题或产品/软件问题整理成有证据支撑的报告与设计规格，支持中文和英文。工作流止于分析/设计，不生成实现代码，也不部署系统。
 
 ## 启用 Codex 适配
 
@@ -18,11 +18,21 @@ codex plugin add problem-navigator@problem-navigator
 
 随后**新建启用插件的 Codex 任务**。命令取决于已安装 Codex 的支持情况，必要时查看 `codex plugin --help`。官方[插件测试指南](https://developers.openai.com/plugins/deploy/connect-chatgpt)说明了本地市场安装与新会话测试流程。
 
-使用公开仓库的克隆副本或唯一发行包 `problem-navigator-2.1.0.zip`，无需另下 Codex 包。两种布局的市场目录都指向安装根目录（`source.path: "."`），并使用上述市场/插件名称。
+使用唯一发行包 `problem-navigator-2.2.0.zip`，无需另下 Codex 包。发行包市场目录指向自身根目录（`source.path: "."`）；请使用包根市场目录及上述市场/插件名称。
 
 首次依赖同步可能下载包。`.codex-plugin/plugin.json` 中内联的 `mcpServers` 对象通过 `uv` 启动共享本地 stdio 服务，不使用独立 `.mcp.json`。技能与 MCP 核心只包含一份，也支持具备所需能力的其他宿主直接加载。
 
-本指南在公开仓库与发行包中都位于 `adapters/codex/`。通用用法见[主 README](../../README.zh-CN.md)。
+保持发行包目录完整；本指南位于 `adapters/codex/`。通用用法见[主 README](../../README.zh-CN.md)。
+
+## 在 Codex 中保持法庭隔离
+
+多候选或已确认范围要求法庭时，必须使用受支持的 Agent Team/独立 Agent。被禁用或暂时故障时先启用或恢复；只有真实缺少能力才允许手动独立 Session，不允许单会话法庭降级。
+
+角色从干净上下文启动，不继承父任务对话。每个倡导者、红队和可行性评估者先独立完成完整文稿，收齐封存后才能交换。进行一至两轮有限质询，再由新的法官上下文读取完整记录，与主会话和所有参与者分离。并发不足时可排队执行独立角色。
+
+角色将完整提交保存到指定文件，只返回安全状态、ID 和引用/哈希。主会话负责协调并读取最终通过校验的中性结论，不接收论证、不担任法官；自动返回结果也必须遵守该边界。发现泄漏后，该次法庭失效，需要干净上下文重新开始。
+
+手动模式由用户打开真实不同的 Session，直接转交角色包与提交。角色不能写文件时，可在该外部 Session 直接向用户返回完整提交供保存，绝不转发给主会话。优先使用宿主上下文 ID，没有 ID 时可给每个真实 Session 登记唯一标签。详见[宿主说明](../../HOST_INSTRUCTIONS.md)、[法庭协议](../../skills/adversarial-option-selection/references/court-protocol.md)和[可复制角色说明](../../skills/adversarial-option-selection/references/role-packets.md)。运行时检查引用、哈希与声明，不证明实际独立性或事实真实。
 
 ## 无需密钥即可开始
 
@@ -84,6 +94,6 @@ codex plugin add problem-navigator@problem-navigator
 - 认证/额度/网络错误：检查所选服务商账户或连接，仅分享安全错误码与请求 ID。
 - 工作流产物缺失/过期：保留文件，明确请求从有效保留输入重新生成，不虚构历史或重置计数。
 
-自动检查覆盖结构、模拟服务商、工作流控制、打包与 stdio 注册，不能证明线上服务或已安装 Codex 的完整端到端体验通过。
+自动检查覆盖结构、模拟服务商、工作流控制、打包与 stdio 注册，不能证明线上服务或已安装 Codex 的完整端到端体验通过。ZIP 包含运行所需资源，应记录在当前宿主实际观察到的行为。
 
 采用 MIT 许可证；解压后的压缩包包含 `LICENSE` 与 `NOTICE.md`。问题反馈中不要携带凭据。若仓库平台启用了私密漏洞报告，请使用该渠道；否则先请求私密渠道，不要公开漏洞细节或秘密。

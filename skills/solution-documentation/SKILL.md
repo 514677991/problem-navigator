@@ -11,7 +11,7 @@ Normative invalid-artifact guard: `invalid_artifact: atomic_next_stage=STOPPED; 
 
 ## Stage gate and invariant
 
-Read ../problem-navigator/references/workflow-control.md for 2.1 controls and endpoint
+Read ../problem-navigator/references/workflow-control.md for 2.2 controls and endpoint
 trims. Preserve the normal full-product trace contract; apply trims before drafting.
 
 Run only when the validated workflow has `next_stage: solution-documentation`. A
@@ -44,6 +44,14 @@ Do not publish an ACCEPTED solution_document envelope or canonical artifact ref 
 the user explicitly accepts the exact whole document. Silence or rejection leaves the
 preview unaccepted and this stage active. After acceptance, validate the proposed
 envelope with the shared validate-document command before atomic publication.
+Record member_hashes as the exact project-relative member path to lowercase SHA256
+mapping. The real CLI checks each existing file and its bytes; metadata-only validation
+is not publication validation. If refined_solution declares requirements, add traceability
+entries {requirement_id, member, locator}: every requirement closes to a current member,
+and locator is literal nonblank text present in that frozen UTF-8 member. Multiple
+sections per requirement are allowed; unknown IDs/members and duplicate triples fail.
+These checks prove declared links/content identity, not the meaning of prose or actual
+user acceptance. Preserve accepted bytes; a changed member requires a new preview/check.
 
 - `GENERAL`: create one versioned formal solution report. Its structure is dynamic,
   but covers source/lineage, problem and decision, scope/non-goals, solution,

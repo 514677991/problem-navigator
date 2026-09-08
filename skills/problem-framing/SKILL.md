@@ -28,7 +28,7 @@ Then stop and return to the entry Skill.
 
 ## Decide only the frame
 
-Read ../problem-navigator/references/workflow-control.md. Its 2.1 recovery,
+Read ../problem-navigator/references/workflow-control.md. Its 2.2 recovery,
 authorization, mixed-evidence and delivery rules supersede older conflicting rules.
 
 Set `analysis_goal` once:
@@ -52,6 +52,10 @@ request uses PRD_ONLY. Pure architecture/technical comparison or software diagno
 uses TECHNICAL_SPEC_ONLY; don't impose a PRD. FINAL_SPEC_PACKAGE applies only when
 requested or when independently reviewable units materially help, confirmed in scope.
 These are scope trims in the same workflow, not additional profiles.
+If the user requires court review, record optional court_required: true in the accepted
+frame. Multiple candidates later require court regardless; false/omitted only permits
+DIRECT when at most one candidate remains. Do not ask a redundant method question or
+weaken an already explicit court instruction.
 
 ## Confirmation and artifact
 

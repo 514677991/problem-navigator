@@ -446,6 +446,7 @@
         "user_confirmation_status"
       ],
       "properties": {
+        "court_required": {"type": "boolean"},
         "schema_version": {
           "const": 1
         },
@@ -594,8 +595,10 @@
     "research_brief": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schema_version", "workflow_id", "revision", "analysis_goal", "tasks"],
+      "required": ["schema_version", "workflow_id", "problem_frame_id", "problem_frame_version", "revision", "analysis_goal", "tasks"],
       "properties": {
+        "problem_frame_id": {"$ref": "#/$defs/non_empty_string"},
+        "problem_frame_version": {"$ref": "#/$defs/positive_integer"},
         "schema_version": {
           "const": 1
         },
@@ -894,6 +897,8 @@
         "external_source_ids"
       ],
       "properties": {
+        "critical": {"type": "boolean"},
+        "basis_evidence_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/non_empty_string"}},
         "evidence_item_id": {
           "$ref": "#/$defs/non_empty_string"
         },
@@ -920,6 +925,15 @@
         }
       },
       "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "INFERENCE"}}, "required": ["kind"]},
+          "then": {"required": ["basis_evidence_ids"]},
+          "else": {"not": {"required": ["basis_evidence_ids"]}}
+        },
+        {
+          "if": {"properties": {"kind": {"const": "FACT"}, "critical": {"const": true}}, "required": ["kind", "critical"]},
+          "then": {"required": ["passage_locator"], "properties": {"passage_locator": {"type": "string", "pattern": "\\S"}}}
+        },
         {
           "if": {
             "properties": {
@@ -1375,6 +1389,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "review",
         "schema_version",
         "workflow_id",
         "decision_id",
@@ -1387,6 +1402,12 @@
         "status"
       ],
       "properties": {
+        "review": {
+          "oneOf": [
+            {"type": "object", "additionalProperties": false, "required": ["mode", "case_ref"], "properties": {"mode": {"enum": ["TEAM", "MANUAL_SESSIONS"]}, "case_ref": {"$ref": "#/$defs/relative_path"}}},
+            {"type": "object", "additionalProperties": false, "required": ["mode", "reason"], "properties": {"mode": {"const": "DIRECT"}, "reason": {"type": "string", "pattern": "\\S"}}}
+          ]
+        },
         "schema_version": {
           "const": 1
         },
@@ -1442,6 +1463,10 @@
         "user_confirmation_status"
       ],
       "properties": {
+        "requirements": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "object", "additionalProperties": false, "required": ["requirement_id", "statement"], "properties": {"requirement_id": {"$ref": "#/$defs/non_empty_string"}, "statement": {"type": "string", "pattern": "\\S"}}}
+        },
         "schema_version": {
           "const": 1
         },
@@ -1492,6 +1517,11 @@
         "acceptance_status"
       ],
       "properties": {
+        "member_hashes": {"type": "object", "propertyNames": {"$ref": "#/$defs/relative_path"}, "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+        "traceability": {
+          "type": "array", "uniqueItems": true,
+          "items": {"type": "object", "additionalProperties": false, "required": ["requirement_id", "member", "locator"], "properties": {"requirement_id": {"$ref": "#/$defs/non_empty_string"}, "member": {"$ref": "#/$defs/relative_path"}, "locator": {"type": "string", "pattern": "\\S"}}}
+        },
         "schema_version": {
           "const": 1
         },

@@ -7,11 +7,14 @@ description: Use when starting or resuming an evidence-backed problem analysis, 
 
 Only ordinary natural-language entry. Own CREATE/RESUME, backend authorization and routing.
 不执行 framing、不搜索、不生成 evidence. Read references/workflow-control.md and
-references/artifacts.schema.json; they govern current 2.1 execution.
+references/artifacts.schema.json; they govern current 2.2 execution.
 
 Serve Chinese and English users equally. Follow the shared language policy for
 interviews, summaries and deliverables; keep machine-readable keys and IDs unchanged.
 Check the shared host capabilities before creating or changing workflow files.
+For court-required selection, supported Agent Team must be enabled and used; genuine
+absence requires manual independent Sessions. The main session never reads court
+arguments or judges them. Follow the selection protocol and its safe CLI receipts.
 Skill names below are stable IDs; load the linked sibling SKILL.md to hand off.
 Host-specific command aliases are optional integration conveniences.
 
@@ -54,7 +57,10 @@ Revocation first clears HOST_NATIVE authorization to UNSET + false, preserving e
 
 Apply user correction before normal routing: reopen affected factual tasks, append new
 questions, or resume --target to a downstream producer. STOPPED recovery requires the
-explicit request and --user-requested. Never guess missing history. On corruption stop
+explicit request and --user-requested. Never guess missing history.
+A legacy decision without review metadata cannot proceed downstream: return explicitly
+to selection and create a valid current review. Missing frame bindings require truthful
+regeneration from validated inputs, never invented migration fields. On corruption stop
 with MISSING_OR_INVALID_ARTIFACT and known task IDs; use shared explicit regeneration.
 
 An entry-preflight block restores NOT_STARTED only with zero calls, empty blocking task
