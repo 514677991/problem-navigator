@@ -1,0 +1,6 @@
+interface:
+  display_name: "Problem Navigator"
+  short_description: "Turn an idea into an evidence-backed report or spec"
+  default_prompt: "Use $problem-navigator to turn this idea into a researched, reviewed solution without implementation code."
+policy:
+  allow_implicit_invocation: true

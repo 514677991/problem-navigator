@@ -1,0 +1,34 @@
+{
+  "name": "problem-navigator",
+  "version": "2.1.0",
+  "description": "Turns general or product/software ideas into evidence-backed reports and design specifications without implementation code.",
+  "author": {
+    "name": "Problem Navigator contributors"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Problem Navigator",
+    "shortDescription": "Ideas to evidence-backed reports and specs",
+    "longDescription": "Analyze general, product, or software ideas through a controlled evidence and decision workflow, ending in reports, PRDs, technical solution specifications, or solution spec packages—not implementation code.",
+    "developerName": "Problem Navigator contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Research",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "使用中文分析这个问题，区分事实、推断和未知，并生成有证据支持的研究报告。",
+      "Analyze this product idea in English and produce a PRD and technical solution specification.",
+      "Use only my materials to produce a technical solution specification without a PRD."
+    ]
+  },
+  "mcpServers": {
+    "web-research": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--locked", "--isolated", "--project", "./mcp/web-research-mcp", "web-research"],
+      "cwd": "."
+    }
+  }
+}

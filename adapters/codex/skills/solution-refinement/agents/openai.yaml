@@ -1,0 +1,6 @@
+interface:
+  display_name: "Solution Refinement"
+  short_description: "Freeze selected solution semantics without formal documents"
+  default_prompt: "Use $solution-refinement to freeze the selected DECIDE solution's semantics."
+policy:
+  allow_implicit_invocation: false

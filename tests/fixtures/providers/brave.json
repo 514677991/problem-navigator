@@ -1,0 +1,36 @@
+{
+  "llm_context_success": {
+    "grounding": {
+      "generic": [
+        {
+          "url": "https://example.com/context",
+          "title": "Context source",
+          "snippets": ["First evidence.", "Second evidence."]
+        }
+      ]
+    }
+  },
+  "news_success": {
+    "results": [
+      {
+        "url": "https://news.example.com/story",
+        "title": "News source",
+        "description": "A reported event.",
+        "page_age": "2026-09-05T12:00:00Z"
+      }
+    ]
+  },
+  "web_success": {
+    "web": {
+      "results": [
+        {
+          "url": "https://developer.example.com/docs",
+          "title": "Developer documentation",
+          "description": "Reference material."
+        }
+      ]
+    }
+  },
+  "empty": {"results": []},
+  "schema_drift": {"grounding": {"generic": "not-an-array"}}
+}

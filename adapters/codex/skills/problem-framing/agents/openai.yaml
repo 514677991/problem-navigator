@@ -1,0 +1,6 @@
+interface:
+  display_name: "Problem Framing"
+  short_description: "Clarify the goal, scope, and delivery boundary"
+  default_prompt: "Use $problem-framing to confirm this analysis workflow's problem frame without solving it."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,32 @@
+# Python and local tools
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv*/
+.uv-cache/
+build/
+dist/
+htmlcov/
+.coverage*
+
+# User research and configuration
+.problem-navigator/
+.env
+.env.*
+!.env.example
+web-research.json
+*.pem
+*.key
+
+# Local development files
+.task*-temp/
+*.log
+.*test*result*.txt
+.control-red-result.txt
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

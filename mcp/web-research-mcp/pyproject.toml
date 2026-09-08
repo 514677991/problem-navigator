@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "web-research-mcp"
+version = "0.2.0"
+description = "Protocol-independent public-web research core with a thin MCP adapter"
+license = "MIT"
+authors = [{ name = "Problem Navigator contributors" }]
+requires-python = ">=3.11"
+dependencies = [
+  "fastmcp>=4.0,<5",
+  "httpx>=0.28,<0.29",
+  "pydantic>=2.12,<3",
+  "jsonschema>=4.26,<5",
+  "PyYAML>=6,<7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "jsonschema>=4.26,<5",
+  "pytest>=9,<10",
+  "pytest-asyncio>=1.2,<2",
+  "PyYAML>=6,<7",
+]
+
+[project.scripts]
+web-research = "web_research.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

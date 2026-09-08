@@ -1,0 +1,6 @@
+interface:
+  display_name: "Decision Readiness Interview"
+  short_description: "Resolve decision-changing values or route evidence gaps"
+  default_prompt: "Use $decision-readiness-interview to assess the current DECIDE workflow without ranking candidates or researching public facts."
+policy:
+  allow_implicit_invocation: false

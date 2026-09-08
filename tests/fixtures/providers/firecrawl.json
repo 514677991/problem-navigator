@@ -1,0 +1,39 @@
+{
+  "papers_success": {
+    "success": true,
+    "results": [
+      {"paperId": "paper-1", "title": "Arxiv paper", "abstract": "Preprint summary", "primaryId": "arxiv:2401.00001", "ids": {"arxiv": ["2401.00001"]}, "score": 0.9},
+      {"paperId": "paper-2", "title": "PubMed paper", "abstract": "Medical summary", "primaryId": "pmid:12345", "ids": {"pmid": ["12345"]}, "score": 0.8},
+      {"paperId": "paper-3", "title": "PMC paper", "abstract": "Archive summary", "primaryId": "pmcid:PMC12345", "ids": {"pmcid": ["PMC12345"]}, "score": 0.7},
+      {"paperId": "paper-4", "title": "DOI paper", "abstract": "DOI summary", "primaryId": "doi:10.1000/a path/part", "ids": {"doi": ["10.1000/a path/part"]}, "score": 0.6},
+      {"paperId": "paper-5", "title": "Web paper", "abstract": "Web summary", "primaryId": "web:https://papers.example.org/record", "ids": {"web": ["https://papers.example.org/record"]}, "score": 0.5}
+    ]
+  },
+  "developer_success": {
+    "success": true,
+    "data": {
+      "web": [
+        {"url": "https://docs.example.com/guide", "title": "Developer guide", "description": "API documentation"}
+      ]
+    }
+  },
+  "scrape_success": {
+    "success": true,
+    "data": {
+      "markdown": "# Retrieved page\n\nUseful content.",
+      "metadata": {"url": "https://example.com/final"}
+    }
+  },
+  "map_success": {
+    "success": true,
+    "links": [
+      {"url": "https://example.com/one"},
+      {"url": "https://example.com/two"},
+      {"url": "https://example.com/one"}
+    ]
+  },
+  "papers_empty": {"success": true, "results": []},
+  "developer_empty": {"success": true, "data": {"web": []}},
+  "papers_schema_drift": {"success": true, "results": "not-an-array"},
+  "developer_schema_drift": {"success": true, "data": {"web": "not-an-array"}}
+}

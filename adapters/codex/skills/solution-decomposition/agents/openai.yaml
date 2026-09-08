@@ -1,0 +1,6 @@
+interface:
+  display_name: "Solution Decomposition"
+  short_description: "Reorganize accepted documents into design-depth spec packages"
+  default_prompt: "Use $solution-decomposition to organize the accepted solution document into a final spec package."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,63 @@
+name: Verify public distribution
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONUTF8: "1"
+      UV_LINK_MODE: copy
+      UV_CACHE_DIR: ${{ runner.temp }}/uv-cache
+      UV_PYTHON: ${{ matrix.python-version }}
+      ARCHIVE_PLUGIN_ROOT: ${{ runner.temp }}/extracted-plugin
+      BRAVE_API_KEY: ""
+      EXA_API_KEY: ""
+      FIRECRAWL_API_KEY: ""
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          enable-cache: false
+      - name: Install locked development dependencies
+        run: uv sync --locked --project mcp/web-research-mcp --extra dev
+      - name: Validate Plugin and repository marketplace
+        run: python scripts/validate_plugin.py plugins/problem-navigator --marketplace .agents/plugins/marketplace.json
+      - name: Verify generated mirror
+        run: python scripts/sync_plugin_payload.py --check
+      - name: Run the full offline test suite
+        run: uv run --locked --project mcp/web-research-mcp --extra dev python -m pytest
+      - name: Build distribution
+        run: python scripts/build_plugin_zip.py
+      - name: Validate the single release and exercise both access modes
+        run: |
+          RELEASE_NAME=$(python -c "import json; print(json.load(open('release.json', encoding='utf-8'))['name'])")
+          RELEASE_VERSION=$(python -c "import json; print(json.load(open('release.json', encoding='utf-8'))['version'])")
+          RELEASE_ARCHIVE="dist/$RELEASE_NAME-$RELEASE_VERSION.zip"
+          python -m zipfile -e "$RELEASE_ARCHIVE" "$ARCHIVE_PLUGIN_ROOT"
+          python scripts/validate_plugin.py "$ARCHIVE_PLUGIN_ROOT"
+          uv sync --locked --project "$ARCHIVE_PLUGIN_ROOT/mcp/web-research-mcp"
+          for ACCESS_MODE in direct declared
+          do
+            uv run --locked --project mcp/web-research-mcp --extra dev python tests/verify_plugin_mcp_registration.py --archive "$RELEASE_ARCHIVE" --mode "$ACCESS_MODE"
+          done
