@@ -7,11 +7,14 @@ description: Use when starting or resuming an evidence-backed problem analysis, 
 
 Only ordinary natural-language entry. Own CREATE/RESUME, backend authorization and routing.
 不执行 framing、不搜索、不生成 evidence. Read references/workflow-control.md and
-references/artifacts.schema.json; they govern current 2.2 execution.
+references/artifacts.schema.json; they govern current execution.
 
 Serve Chinese and English users equally. Follow the shared language policy for
 interviews, summaries and deliverables; keep machine-readable keys and IDs unchanged.
 Check the shared host capabilities before creating or changing workflow files.
+Research uses enabled Team when supported, otherwise independent manual Sessions
+with shared control; see ../research-execution/references/research-dispatch.md.
+Main coordinates safe receipts and receives the final neutral research package.
 For court-required selection, supported Agent Team must be enabled and used; genuine
 absence requires manual independent Sessions. The main session never reads court
 arguments or judges them. Follow the selection protocol and its safe CLI receipts.

@@ -2,7 +2,7 @@
 
 # Problem Navigator — Codex adapter
 
-This is the Codex adapter for the general-purpose Problem Navigator plugin, release `2.2.0`, with local Web Research MCP `0.2.0`. The shared skills and Python/MCP core can also be integrated with other capable hosts; this guide covers only Codex. Turn general or product/software problems into evidence-backed reports and design specifications in Chinese or English. The workflow ends at analysis/design and does not generate implementation code or deploy a system.
+This is the Codex adapter for the general-purpose Problem Navigator plugin, release `2.3.0`, with local Web Research MCP `0.2.0`. The shared skills and Python/MCP core can also be integrated with other capable hosts; this guide covers only Codex. Turn general or product/software problems into evidence-backed reports and design specifications in Chinese or English. The workflow ends at analysis/design and does not generate implementation code or deploy a system.
 
 ## Enable the Codex adapter
 
@@ -18,7 +18,7 @@ codex plugin add problem-navigator@problem-navigator
 
 Start a **new Codex task with the plugin enabled**. Commands depend on support in your installed Codex; inspect `codex plugin --help` when needed. The official [plugin testing guide](https://developers.openai.com/plugins/deploy/connect-chatgpt) describes installing from a local marketplace and testing in a new conversation.
 
-Use the single release archive `problem-navigator-2.2.0.zip`; no separate Codex download is needed. The archive catalog points to its own root (`source.path: "."`). Use the archive-root catalog and the marketplace/plugin name shown above.
+Use the single release archive `problem-navigator-2.3.0.zip`; no separate Codex download is needed. The archive catalog points to its own root (`source.path: "."`). Use the archive-root catalog and the marketplace/plugin name shown above.
 
 The first dependency sync may download packages. The inline `mcpServers` object in `.codex-plugin/plugin.json` launches the shared local stdio server through `uv`. The bundle does not use an independent `.mcp.json`. Skills and MCP core are included once and also support direct loading in other capable hosts.
 

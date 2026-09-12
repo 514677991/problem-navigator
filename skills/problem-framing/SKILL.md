@@ -28,7 +28,7 @@ Then stop and return to the entry Skill.
 
 ## Decide only the frame
 
-Read ../problem-navigator/references/workflow-control.md. Its 2.2 recovery,
+Read ../problem-navigator/references/workflow-control.md. Its current recovery,
 authorization, mixed-evidence and delivery rules supersede older conflicting rules.
 
 Set `analysis_goal` once:
@@ -46,12 +46,26 @@ Set `content_profile` independently:
 
 The profile does not select a backend and does not enter the workflow YAML.
 
+For `PRODUCT_SOFTWARE`, read only the "Six inputs, asked only where needed" section
+of `../research-design-kickoff/references/product-research-guide.md`. Reuse supplied
+product definition, market, competitor/substitute anchors, critical resources,
+reuse intention and capability/module context. Record accepted scope and constraints
+in the existing frame fields; do not add a second specification or new frame fields.
+Ask only for a user-controlled unknown that materially changes the boundary.
+Public facts and undecided technical alternatives become later research questions.
+Do not conduct a fixed six-question interview or invent missing user choices.
+`GENERAL` does not read this guide or collect the six product inputs; clarify only
+its own problem, goal, scope and material constraints.
+
 Choose the endpoint from the requested deliverable: UNDERSTAND uses RESEARCH_REPORT;
 GENERAL or full-product DECIDE defaults to FORMAL_DOCUMENT. A product-needs-only
 request uses PRD_ONLY. Pure architecture/technical comparison or software diagnosis
 uses TECHNICAL_SPEC_ONLY; don't impose a PRD. FINAL_SPEC_PACKAGE applies only when
 requested or when independently reviewable units materially help, confirmed in scope.
 These are scope trims in the same workflow, not additional profiles.
+For PRD_ONLY, user capabilities may describe the needed boundary without a technical
+module map. For TECHNICAL_SPEC_ONLY, reuse the existing system context instead of
+forcing a market or competitor interview. UNDERSTAND does not require candidates.
 If the user requires court review, record optional court_required: true in the accepted
 frame. Multiple candidates later require court regardless; false/omitted only permits
 DIRECT when at most one candidate remains. Do not ask a redundant method question or

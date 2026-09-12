@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+from contextlib import contextmanager
 import hashlib
 import importlib.util
 import json
@@ -10,6 +11,7 @@ import os
 import re
 from pathlib import Path
 import tempfile
+import time
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -34,6 +36,53 @@ def _unique(values: list[dict], key: str) -> dict[str, dict]:
     return result
 
 
+def validate_brief_design(frame: dict, brief: dict, *, require_design: bool = False) -> None:
+    """Check declared coverage and prerequisite graph, not question relevance."""
+    tasks = _unique(brief['tasks'], 'task_id')
+    visiting, finished = set(), set()
+    def visit(tid):
+        if tid in visiting or tid not in tasks:
+            raise ValueError('INVALID_TASK_DEPENDENCIES')
+        if tid in finished:
+            return
+        visiting.add(tid)
+        for dependency in tasks[tid].get('depends_on', []):
+            visit(dependency)
+        visiting.remove(tid); finished.add(tid)
+    for tid in tasks:
+        visit(tid)
+    design = brief.get('design')
+    if design is None:
+        if require_design:
+            raise ValueError('RESEARCH_DESIGN_REQUIRED')
+        return
+    rows = _unique(design['theme_coverage'], 'theme_id')
+    if frame['content_profile'] == 'PRODUCT_SOFTWARE':
+        if not design.get('product_context', '').strip() or not {'product-form', 'critical-resources', 'open-source-ecosystem', 'implementation-path'} <= set(rows):
+            raise ValueError('PRODUCT_RESEARCH_COVERAGE_REQUIRED')
+    elif 'product_context' in design:
+        raise ValueError('GENERAL_PRODUCT_CONTEXT_FORBIDDEN')
+    covered = set()
+    for row in rows.values():
+        tids = set(row['task_ids'])
+        if not tids <= set(tasks) or (row['treatment'] == 'NOT_APPLICABLE') != (not tids):
+            raise ValueError('RESEARCH_DESIGN_TASK_COVERAGE')
+        if row['treatment'] == 'RESEARCH' and any(tasks[tid]['theme_id'] != row['theme_id'] for tid in tids):
+            raise ValueError('RESEARCH_DESIGN_THEME_MISMATCH')
+        covered.update(tids)
+    if covered != set(tasks):
+        raise ValueError('RESEARCH_DESIGN_TASK_COVERAGE')
+
+
+def dependent_task_ids(brief: dict, task_ids) -> set[str]:
+    ids = set(task_ids)
+    while True:
+        expanded = ids | {t['task_id'] for t in brief['tasks'] if ids.intersection(t.get('depends_on', []))}
+        if expanded == ids:
+            return ids
+        ids = expanded
+
+
 def _boundary(workflow: dict, frame: dict, brief: dict) -> dict[str, dict]:
     for name, value in (('workflow', workflow), ('problem_frame', frame), ('research_brief', brief)):
         validate(name, value)
@@ -42,6 +91,7 @@ def _boundary(workflow: dict, frame: dict, brief: dict) -> dict[str, dict]:
         if value.get('analysis_goal') != workflow.get('analysis_goal'):
             raise ValueError('GOAL_MISMATCH')
     tasks = _unique(brief['tasks'], 'task_id')
+    validate_brief_design(frame, brief)
     if (brief['problem_frame_id'], brief['problem_frame_version']) != (frame['problem_frame_id'], frame['problem_frame_version']):
         raise ValueError('FRAME_BINDING_MISMATCH')
     if frame['user_confirmation_status'] != 'ACCEPTED':
@@ -63,7 +113,7 @@ def _boundary(workflow: dict, frame: dict, brief: dict) -> dict[str, dict]:
     return tasks
 
 
-def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict) -> None:
+def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict, *, require_candidate_coverage: bool = True) -> None:
     """Validate receipt ownership and retained evidence before destructive ref changes."""
     tasks = _boundary(workflow, frame, brief)
     is_draft = 'completed_receipts' in evidence
@@ -143,7 +193,7 @@ def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict) 
                 raise ValueError('INFERENCE_BASIS_MISMATCH')
         if item['kind'] in ('FACT', 'INFERENCE'):
             candidate_themes.update((cid, tasks[task_id]['theme_id']) for cid in item.get('candidate_ids', []))
-        supported.add(task_id)
+            supported.add(task_id)
     for task_id, receipt in receipts.items():
         if receipt['outcome'] == 'WITH_RESULTS' and task_id not in supported:
             raise ValueError('EVIDENCE_SUPPORT_MISSING')
@@ -151,7 +201,7 @@ def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict) 
             raise ValueError('RECEIPT_LIMITATION_MISSING')
     unfinished_themes = {tasks[tid]['theme_id'] for tid in unfinished}
     required_themes = {(cid, tasks[tid]['theme_id']) for cid in candidates for tid in receipts if tasks[tid]['theme_id'] not in unfinished_themes}
-    if not required_themes <= candidate_themes:
+    if require_candidate_coverage and not required_themes <= candidate_themes:
         raise ValueError('CANDIDATE_THEME_COVERAGE_MISSING')
     if not is_draft:
         state = 'RESEARCH_COMPLETE' if all(r['outcome'] == 'WITH_RESULTS' and r['quality_met'] for r in receipts.values()) else 'RESEARCH_PARTIAL'
@@ -221,12 +271,13 @@ def reopen_research(workflow: dict, frame: dict, brief: dict, evidence: dict, ta
     if not reason.strip() or not ids or len(ids) != len(task_ids) or not ids <= set(workflow['call_counts']):
         raise ValueError('INVALID_CORRECTION_TASKS_OR_REASON')
     draft = _as_draft(evidence)
+    ids = dependent_task_ids(brief, ids)
     # A factual correction also invalidates conclusions in other tasks that
     # explicitly depend on those facts. Reopen their full receipts conservatively.
     while True:
         removed_items = {item['evidence_item_id'] for item in draft['evidence_items'] if item['task_id'] in ids}
         dependent_tasks = {item['task_id'] for item in draft['evidence_items'] if removed_items.intersection(item.get('basis_evidence_ids', []))}
-        expanded = ids | dependent_tasks
+        expanded = dependent_task_ids(brief, ids | dependent_tasks)
         if expanded == ids:
             break
         ids = expanded
@@ -276,6 +327,16 @@ def extend_brief(workflow: dict, frame: dict, brief: dict, evidence: dict, new_t
     revised = deepcopy(brief)
     revised['revision'] += 1
     revised['tasks'].extend(deepcopy(new_tasks))
+    if 'design' in revised:
+        rows = revised['design']['theme_coverage']
+        for task in new_tasks:
+            row = next((r for r in rows if r['theme_id'] == task['theme_id']), None)
+            if row is None:
+                rows.append({'theme_id': task['theme_id'], 'treatment': 'RESEARCH', 'rationale': reason, 'task_ids': [task['task_id']]})
+            else:
+                if row['treatment'] == 'NOT_APPLICABLE':
+                    row.update(treatment='RESEARCH', rationale=reason)
+                row['task_ids'].append(task['task_id'])
     ids = _unique(revised['tasks'], 'task_id')
     validate('research_brief', revised)
     draft = _as_draft(evidence)
@@ -457,8 +518,61 @@ def _write(path: Path, value: dict) -> None:
             os.unlink(temporary)
 
 
+@contextmanager
+def workflow_lock(workflow_path: Path, timeout: float = 10.0):
+    """Serialize a complete local read/validate/write, never a provider call.
+
+    An OS lock is released after process death. All cooperating mutating helpers
+    use this same path; copied/cloud-synced workspaces are not a shared lock domain.
+    """
+    path = Path(str(workflow_path.resolve()) + '.lock')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open('a+b') as stream:
+        stream.seek(0, os.SEEK_END)
+        if stream.tell() == 0:
+            stream.write(b'\0'); stream.flush()
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                stream.seek(0)
+                if os.name == 'nt':
+                    import msvcrt
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except (BlockingIOError, OSError):
+                if time.monotonic() >= deadline:
+                    raise ValueError('WORKFLOW_BUSY') from None
+                time.sleep(0.025)
+        try:
+            yield
+        finally:
+            stream.seek(0)
+            if os.name == 'nt':
+                import msvcrt
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+
+
+class _SafeParser(argparse.ArgumentParser):
+    def error(self, message):
+        raise ValueError('INVALID_ARGUMENTS')
+
+
+def _research_helper():
+    path = Path(__file__).resolve().parents[2] / 'research-execution/scripts/research_control.py'
+    spec = importlib.util.spec_from_file_location('workflow_research_dispatch', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = _SafeParser(description=__doc__)
     parser.add_argument('--project-root', type=Path, required=True)
     parser.add_argument('--workflow', required=True)
     sub = parser.add_subparsers(dest='action', required=True)
@@ -486,17 +600,30 @@ def main() -> None:
     decision_check.add_argument('--decision', required=True)
     publication = sub.add_parser('validate-publication')
     publication.add_argument('--package', required=True)
+    brief_check = sub.add_parser('validate-brief')
+    brief_check.add_argument('--require-design', action='store_true')
     args = parser.parse_args()
     root = args.project_root.resolve()
     workflow_path = _path(root, args.workflow)
+    with workflow_lock(workflow_path):
+        _run_cli(args, root, workflow_path)
+
+
+def _run_cli(args, root: Path, workflow_path: Path) -> None:
     workflow = yaml.safe_load(workflow_path.read_text('utf-8'))
     validate('workflow', workflow)
     def read(name: str) -> dict:
         return yaml.safe_load(_path(root, workflow['artifact_refs'][name]).read_text('utf-8'))
     frame, brief = read('problem_frame'), read('research_brief')
+    if args.action == 'validate-brief':
+        _boundary(workflow, frame, brief)
+        validate_brief_design(frame, brief, require_design=args.require_design)
+        print(json.dumps({'brief_valid': True, 'revision': brief['revision']}))
+        return
     if args.action == 'validate-publication':
         package = yaml.safe_load(_path(root, args.package).read_text('utf-8'))
         validate_publication(workflow, frame, brief, read('evidence_draft'), package)
+        _research_helper().validate_dispatch_publication(root, workflow, frame, brief, read('evidence_draft'), package)
         print(json.dumps({'publication_valid': True}))
         return
     if args.action == 'validate-document':
@@ -524,7 +651,8 @@ def main() -> None:
     elif args.action in ('reopen', 'append'):
         evidence = read('evidence_draft' if 'evidence_draft' in workflow['artifact_refs'] else 'evidence_package')
         if args.action == 'reopen':
-            updated, draft = reopen_research(workflow, frame, brief, evidence, args.task_id, args.reason, user_requested=args.user_requested)
+            reopen_ids = _research_helper().affected_dispatch_tasks(root, workflow, brief, evidence, args.task_id)
+            updated, draft = reopen_research(workflow, frame, brief, evidence, list(reopen_ids), args.reason, user_requested=args.user_requested)
         else:
             tasks = yaml.safe_load(_path(root, args.tasks).read_text('utf-8'))
             readiness = read('readiness_pack') if 'readiness_pack' in workflow['artifact_refs'] else None
@@ -534,12 +662,18 @@ def main() -> None:
         needed = OUTPUTS[:STAGES.index(args.target)]
         updated = resume_stage(workflow, args.target, {k: read(k) for k in needed}, user_requested=args.user_requested, project_root=root)
     else:
+        _research_helper().guard_legacy_reserve(root, workflow, args.task_id)
         evidence = read('evidence_draft')
         validate_evidence(workflow, frame, brief, evidence)
         if args.task_id not in evidence['unfinished_task_ids']:
             raise ValueError('TASK_ALREADY_COMPLETED')
         updated = reserve_call(workflow, frame, brief, args.task_id, args.operation, recovery=args.recovery)
     validate('workflow', updated)
+    if args.action == 'reopen':
+        affected = set(draft['unfinished_task_ids']) - set(evidence.get('unfinished_task_ids', []))
+        _research_helper().invalidate_dispatch(root, workflow, affected | reopen_ids)
+    elif args.action == 'append':
+        _research_helper().invalidate_dispatch(root, workflow, pending_only=True)
     if args.action in ('init', 'reopen', 'append'):
         writes.append((_path(root, updated['artifact_refs']['evidence_draft']), draft))
     for path, value in writes:

@@ -2,7 +2,7 @@
 
 # Problem Navigator — Codex 适配
 
-这是通用 Problem Navigator 插件的 Codex 适配，发行版本 `2.2.0`，内置本地 Web Research MCP `0.2.0`。共享技能和 Python/MCP 核心也可集成至具备所需能力的其他宿主；本指南仅介绍 Codex。将通用问题或产品/软件问题整理成有证据支撑的报告与设计规格，支持中文和英文。工作流止于分析/设计，不生成实现代码，也不部署系统。
+这是通用 Problem Navigator 插件的 Codex 适配，发行版本 `2.3.0`，内置本地 Web Research MCP `0.2.0`。共享技能和 Python/MCP 核心也可集成至具备所需能力的其他宿主；本指南仅介绍 Codex。将通用问题或产品/软件问题整理成有证据支撑的报告与设计规格，支持中文和英文。工作流止于分析/设计，不生成实现代码，也不部署系统。
 
 ## 启用 Codex 适配
 
@@ -18,7 +18,7 @@ codex plugin add problem-navigator@problem-navigator
 
 随后**新建启用插件的 Codex 任务**。命令取决于已安装 Codex 的支持情况，必要时查看 `codex plugin --help`。官方[插件测试指南](https://developers.openai.com/plugins/deploy/connect-chatgpt)说明了本地市场安装与新会话测试流程。
 
-使用唯一发行包 `problem-navigator-2.2.0.zip`，无需另下 Codex 包。发行包市场目录指向自身根目录（`source.path: "."`）；请使用包根市场目录及上述市场/插件名称。
+使用唯一发行包 `problem-navigator-2.3.0.zip`，无需另下 Codex 包。发行包市场目录指向自身根目录（`source.path: "."`）；请使用包根市场目录及上述市场/插件名称。
 
 首次依赖同步可能下载包。`.codex-plugin/plugin.json` 中内联的 `mcpServers` 对象通过 `uv` 启动共享本地 stdio 服务，不使用独立 `.mcp.json`。技能与 MCP 核心只包含一份，也支持具备所需能力的其他宿主直接加载。
 

@@ -2,7 +2,7 @@
 
 # Problem Navigator
 
-Turn an unclear general or product/software problem into an evidence-backed research report, decision or design specification. Shared skills and a local Python/MCP research core support Chinese and English. Release **2.2.0**; research MCP **0.2.0**; [MIT](LICENSE).
+Turn an unclear general or product/software problem into an evidence-backed research report, decision or design specification. Shared skills and a local Python/MCP research core support Chinese and English. Release **2.3.0**; research MCP **0.2.0**; [MIT](LICENSE).
 
 ## Core ideas across the eight stages
 
@@ -36,6 +36,32 @@ Principles that apply throughout the workflow also include:
 
 These methods require careful host execution and judgment. Structural checks and hashes establish record consistency; they do not prove factual truth, that an experiment occurred, optimal architecture, actual context isolation or real user acceptance.
 
+## From a question to an executable research brief
+
+Product/software research connects six project anchors—definition, target market,
+competitors or substitutes, critical resources, reuse intent and capability/module
+boundaries—to concrete questions. The [product research guide](skills/research-design-kickoff/references/product-research-guide.md)
+expands product form, resource-specific constraints, open-source reuse and implementation
+paths. Relevant omissions and merges are explained; fixed competitor counts or a
+six-module architecture are not required. Known inputs are reused, public unknowns
+become research tasks, and only material user-owned ambiguity needs clarification.
+
+General problems choose their own themes. A short material-only explanation can
+remain one task; UNDERSTAND produces an explanation and its limits without candidate
+ranking. Every new task states its purpose, expected output, evidence quality bar,
+stopping condition and genuine dependencies. The brief is the authoritative source
+for the worker packets, so dispatch does not introduce a second research plan.
+
+Research uses enabled **Agent Team when supported**, otherwise real independent
+manual **Sessions**. One task can use one independent researcher; a separate synthesis
+context is used for multiple results. Main receives coordination receipts and the final
+neutral evidence package, keeping research bodies outside its context. Independent
+tasks can run in parallel while shared budget updates are serialized. See the
+[research dispatch protocol](skills/research-execution/references/research-dispatch.md).
+Context declarations and local receipts do not prove actual host isolation or undeclared
+external calls. Manual Sessions without shared control receive handoff packets; they
+cannot be reported as a validated execution.
+
 ## How the court stays separate
 
 | Step | Who reads the content |
@@ -52,7 +78,7 @@ Manual mode supplies copy-ready role packets. The user opens independent Session
 
 ## Quick start
 
-Use an AI host that can load complete skill files/references, read/write local artifacts, run Python commands and obtain clarification and document acceptance. Prepare Python 3.11+ and `uv` on that host's PATH. Keep `skills/`, `mcp/` and `release.json` together in the extracted `problem-navigator-2.2.0.zip`. From that root:
+Use an AI host that can load complete skill files/references, read/write local artifacts, run Python commands and obtain clarification and document acceptance. Prepare Python 3.11+ and `uv` on that host's PATH. Keep `skills/`, `mcp/` and `release.json` together in the extracted `problem-navigator-2.3.0.zip`. From that root:
 
 ```sh
 uv sync --locked --project mcp/web-research-mcp

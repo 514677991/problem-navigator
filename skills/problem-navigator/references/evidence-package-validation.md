@@ -1,10 +1,17 @@
-# Evidence package semantic gate 2.2
+# Evidence package semantic gate
 
 Read workflow-control.md. Schema validation precedes workflow_control.validate_evidence;
 first execution initializes its draft before this gate. Before publishing an accepted
 package run validate-publication against the completed draft and proposed package.
 The executable checks protect
 identity, revision, ownership and reference closure; hosts must still evaluate factual truth.
+
+Independent research submissions remain assigned result files until the allowed
+synthesis context assembles the canonical draft. Per-task intake validates ownership
+and support without demanding candidate coverage for themes not yet synthesized;
+the final draft/package still requires full candidate-by-theme evidence or limitations.
+Preserve retained facts, sources and receipts during synthesis. New factual claims or
+corrections return to research; context declarations cannot prove actual independence.
 
 1. Workflow/frame/brief/draft or package share workflow_id and analysis_goal wherever present.
    Upstream ID/version tuples equal current referenced artifacts.

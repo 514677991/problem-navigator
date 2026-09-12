@@ -9,7 +9,8 @@ Contract marker: stage_gate: next_stage == research-execution.
 Normative wrong-stage guard: wrong_stage: return=problem-navigator; artifact_writes=0; state_mutations=0.
 Normative invalid-artifact guard: invalid_artifact: atomic_next_stage=STOPPED; blocking_reason.code=MISSING_OR_INVALID_ARTIFACT.
 
-Read ../problem-navigator/references/workflow-control.md and evidence-package-validation.md.
+Read ../problem-navigator/references/workflow-control.md, evidence-package-validation.md
+and references/research-dispatch.md. The dispatch protocol applies to both profiles.
 Schema: ../problem-navigator/references/artifacts.schema.json.
 Gate: ../problem-navigator/references/evidence-package-validation.md.
 Validate workflow/frame/brief first. On initial NOT_STARTED, zero counts and no evidence refs,
@@ -18,8 +19,20 @@ over interrupted history. Wrong stage returns unchanged; invalid input stops wit
 
 ## Execute unfinished work
 
+Prepare real isolated research contexts through the research control helper. Enabled
+Team is mandatory where supported; otherwise use independent manual Sessions. Main
+coordinates safe receipts and later reads only the neutral package. Do not inherit
+its full conversation into researchers. A short GENERAL material question may use
+one researcher; multiple results use a fresh synthesis context. Missing shared control
+allows packet handoff, not a claim of controlled execution. Follow the reference's
+prepare/packet/reserve/submit/summary commands, result templates and current bindings.
+
 During ordinary resume execute only unfinished_task_ids. Explicit factual correction first
 uses reopen, which legally reopens affected completed tasks; new questions use append.
+Retained valid submissions are finished work even before canonical synthesis; do not
+rerun them because they remain in the base draft's unfinished list. Dependencies wait
+for validated prerequisite submissions. Packet attempts prevent importing old results
+after correction; never reconstruct corrupted state from conversation memory.
 For PROVIDED_MATERIAL read accessible material_refs using file/document/repository tools,
 create external_sources per material/task relationship, and preserve zero network counts.
 A WITH_RESULTS material receipt has call_refs: [], source_ids: [], non-empty external_source_ids
@@ -49,7 +62,8 @@ interruptions alone do not require renewed consent. Host sources need stable res
 and accessible public URL; otherwise record a limitation, never invent evidence.
 A globally HOST_NATIVE workflow preserves HOST_NATIVE + true.
 
-Immediately before each actual operation invoke reserve; use --recovery only for
+Immediately before each actual operation invoke the research helper's reserve with
+the assigned task/attempt and a stable request ID; use --recovery only for
 correction, failed-call recovery or capability fallback. Call only after atomic reservation.
 Overall defaults: 40 calls with six reserved for recovery; no per-task caps. Failed,
 interrupted and host calls count. At total limit retain partial evidence and explain gap;
@@ -75,12 +89,22 @@ candidate-tagged FACT/INFERENCE or a limitation naming that candidate and an aff
 task in the theme. Do not count untagged findings as a complete candidate comparison.
 Check counterevidence, source independence and versions; keep candidate comparisons symmetric.
 
-Persist draft after each completed task. Counts without receipts are interrupted work,
+Submit each completed task to its assigned result file and retain its validated receipt.
+The independent synthesis step merges these results with retained base evidence into
+the canonical draft; late candidate discovery does not require earlier workers to
+invent comparisons. Counts without receipts are interrupted work,
 not permission to fabricate results. On recoverable unavailable routes retain draft/counts,
 set RESEARCH_BLOCKED and unfinished IDs at execution; return to entry if authorization
 or configuration needs a decision.
 
 ## Publish
+
+The allowed synthesis context submits the merged draft and neutral_synthesis through
+the shared dispatch reference. Preserve task receipts, sources and facts; add candidate
+tags and explicit coverage gaps where justified. Factual additions require research.
+No supported input fact may disappear merely to simplify the conclusion. A single
+researcher can summarize its own sole task; multiple results need a separate context.
+The helper returns a proposed package reference, never actual user acceptance.
 
 One package contains neutral_synthesis, execution_receipts, sources, external_sources,
 evidence_items, limitations; DECIDE adds candidate_basis/candidates. Synthesis uses relevant
