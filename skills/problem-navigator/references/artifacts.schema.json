@@ -492,8 +492,9 @@
           "$ref": "#/$defs/non_empty_string"
         },
         "user_confirmation_status": {
-          "const": "ACCEPTED"
-        }
+          "enum": ["DRAFT", "ACCEPTED"]
+        },
+        "confirmation_basis": {"$ref": "#/$defs/non_empty_string"}
       }
     },
     "research_reservation": {
@@ -924,7 +925,7 @@
         },
         "retrieved_at": {
           "type": "string",
-          "format": "date-time"
+          "anyOf": [{"format": "date"}, {"format": "date-time"}]
         },
         "query_summary": {
           "type": "string",

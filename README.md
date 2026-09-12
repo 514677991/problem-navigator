@@ -2,7 +2,7 @@
 
 # Problem Navigator
 
-Turn an unclear general or product/software problem into an evidence-backed research report, decision or design specification. Shared skills and a local Python/MCP research core support Chinese and English. Release **2.3.0**; research MCP **0.2.0**; [MIT](LICENSE).
+Turn an unclear general or product/software problem into an evidence-backed research report, decision or design specification. Shared skills and a local Python/MCP research core support Chinese and English. Release **2.4.0**; research MCP **0.2.0**; [MIT](LICENSE).
 
 ## Core ideas across the eight stages
 
@@ -78,7 +78,19 @@ Manual mode supplies copy-ready role packets. The user opens independent Session
 
 ## Quick start
 
-Use an AI host that can load complete skill files/references, read/write local artifacts, run Python commands and obtain clarification and document acceptance. Prepare Python 3.11+ and `uv` on that host's PATH. Keep `skills/`, `mcp/` and `release.json` together in the extracted `problem-navigator-2.3.0.zip`. From that root:
+Clarification, setup choices, requirement review and delivery acceptance use **ordinary
+text**, without option cards or response deadlines. When Web research needs an unconfigured
+capability, choose guided provider setup, authorized host tools or offline analysis. Enter
+keys locally, never in the conversation.
+
+After clarification, review a concise summary of the goal, research priorities, scope
+and important assumptions. **Research design and execution start after you accept that
+summary.** Pending questions and draft references remain in the workspace for a later
+reply. Research depth follows core questions versus peripheral overview; multi-route
+reports show inspected evidence and gaps. Reports are previews until you accept the
+actual version, then the workflow completes or advances to decision work.
+
+Use an AI host that can load complete skill files/references, read/write local artifacts, run Python commands and obtain clarification and document acceptance. Prepare Python 3.11+ and `uv` on that host's PATH. Keep `skills/`, `mcp/` and `release.json` together in the extracted `problem-navigator-2.4.0.zip`. From that root:
 
 ```sh
 uv sync --locked --project mcp/web-research-mcp

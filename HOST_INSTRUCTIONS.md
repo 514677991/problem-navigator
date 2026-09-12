@@ -1,6 +1,6 @@
 # Host integration instructions / 宿主集成说明
 
-This file travels with the single release bundle, `problem-navigator-2.3.0.zip`. It describes host responsibilities for the shared workflow. The same bundle includes optional Codex metadata and the guide at `adapters/codex/README.md`; shared skills/MCP files are included once. / 本文件随唯一发行包 `problem-navigator-2.3.0.zip` 提供，说明宿主执行共享工作流的职责。同一包包含可选 Codex 元数据及 `adapters/codex/README.zh-CN.md` 指南，共享技能/MCP 文件仅一份。
+This file travels with the single release bundle, `problem-navigator-2.4.0.zip`. It describes host responsibilities for the shared workflow. The same bundle includes optional Codex metadata and the guide at `adapters/codex/README.md`; shared skills/MCP files are included once. / 本文件随唯一发行包 `problem-navigator-2.4.0.zip` 提供，说明宿主执行共享工作流的职责。同一包包含可选 Codex 元数据及 `adapters/codex/README.zh-CN.md` 指南，共享技能/MCP 文件仅一份。
 
 ## Full workflow requirements / 完整工作流要求
 
@@ -17,6 +17,14 @@ Plain chat cannot execute the full workflow. MCP alone provides research tools; 
 The optional `.codex-plugin/plugin.json` contains Codex's inline `mcpServers` registration. For another capable host, load the shared files and configure the stdio command below using that host's format. No independent `.mcp.json` is required or shipped. One archive does not imply universal one-click installation or validated behavior in every host. / 可选 `.codex-plugin/plugin.json` 内联 Codex 的 `mcpServers` 注册。其他具备能力的宿主可加载共享文件，并按自身格式配置下方 stdio 命令。无需且不附带独立 `.mcp.json`。单一压缩包不代表所有宿主都可一键安装或已验证通过。
 
 ## Install and load / 安装与加载
+
+Plugin questions use ordinary text, never option-card tools. Preserve required questions
+and draft references in `.problem-navigator/pending.md` without a timeout; do not treat
+silence or a selected backend as acceptance of the requirement summary. Show the assembled
+requirements and wait for acceptance before research design/execution. Follow the shared
+interaction rule in workflow-control.md. / 插件提问统一使用普通文字，不用选项卡；关键问题
+与草稿引用保存在 pending.md，等待不限时。整理后的需求摘要需用户确认，联网授权不能
+代替需求确认。随后才开始调研任务设计和执行。
 
 Keep `skills/` and `mcp/` under the same installation root. From there, prepare dependencies: / 保持 `skills/` 与 `mcp/` 同根，在该目录准备依赖：
 
@@ -43,6 +51,20 @@ skills/solution-decomposition/SKILL.md
 The entry owns create/resume and routing; load later stages when directed. Hosts may implement discovery or explicit file reads. No `$`/`/` invocation syntax is required. Do not copy only a short summary of the skill and treat it as the entire workflow. / 入口负责创建/续接与路由，按其指示加载后续阶段。宿主可通过技能发现或明确读取文件实现，不要求 `$`/`/` 调用语法。不要仅复制短摘要并当作完整工作流。
 
 Use the local helpers and the paths specified by the workflow contract. Resolve installation paths independently of the current working directory. Save state under the analysis workspace's `.problem-navigator/workflows/` and preserve referenced artifacts. Controlled CLI requests share a short lock and may queue; never race them with direct writes. / 按工作流契约使用本地工具和路径，安装路径解析不依赖当前工作目录。状态保存在分析工作区的 `.problem-navigator/workflows/`，保留引用产物。受控 CLI 请求使用同一短锁、可以排队，不得用直接写入与其竞争。
+
+Read existing project setup before resolving Python/uv again. Once a Python 3.11+
+environment with the locked dependencies runs the helper, reuse it directly for all
+roles. Packet control_entry.argv_prefix contains that executable and absolute paths.
+Workflow helpers resolve their own bundled MCP source; no runtime registry is needed.
+Generated JSON is strict JSON; older YAML-in-JSON handoffs are not migrated. / 优先复用
+项目已有配置和已验证的解释器；角色直接使用任务包中的参数数组，无需重新查找 uv 或
+混用缓存的可编辑安装。新 JSON 文件按标准 JSON 写入，不迁移旧版误写交接文件。
+
+The existing workflow_control.py provides `create`, `accept-frame`, `attach-brief`,
+`preview-report` and `accept-report`; use `--help` for arguments. It owns validation and
+artifact-first/state-last writes, not user choices. The host supplies actual acceptance
+of the shown version. / 现有控制脚本提供上述命令，替代临时初始化与导出脚本；其职责是
+检查版本和执行文件写入，用户选择与真实确认仍由宿主负责。
 
 ## Required court isolation / 必需的法庭隔离
 
@@ -94,6 +116,13 @@ Replace the placeholder with the actual absolute installation path. A common JSO
 Windows JSON paths can use forward slashes or escaped backslashes. The server is stdio-only; a remote-HTTP-only MCP host cannot connect directly. It exposes `web_research_status`, `web_search`, `web_fetch`, and `web_map`, with no workflow prompts/resources. Discover tools by actual names and schemas, allowing host prefixes; do not hardcode a particular host's prefix. / Windows JSON 路径可使用正斜杠或转义反斜杠。服务仅支持 stdio，远程 HTTP MCP 宿主不能直接连接。服务提供上述四个工具，不提供工作流 prompts/resources。按实际工具名和结构发现工具，允许宿主添加前缀，不硬编码某一宿主前缀。
 
 ## Provider keys and routes / 服务商密钥与路由
+
+At first Web use without a suitable configured provider or existing backend choice,
+explain the missing capability and offer setup guidance, scoped host tools or offline
+work in ordinary text. Configure only needed providers using the instructions below,
+then recheck local status. A live authorized request is needed to verify authentication
+and quota. / 首次联网缺少适用配置且用户尚未选择后端时，用普通文字提供配置引导、宿主
+工具或离线处理三条路径；按需配置后重新检查。配置状态不等于线上认证和额度可用。
 
 Store UTF-8 JSON in the user's home at `.problem-navigator/web-research.json`, outside the installation and workspace repository. Replace placeholders locally and omit unused providers: / 在用户主目录的 `.problem-navigator/web-research.json` 保存 UTF-8 JSON，放在安装目录与工作区仓库之外。在本地替换占位符，省略不使用的服务商：
 

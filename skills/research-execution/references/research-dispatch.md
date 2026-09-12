@@ -40,6 +40,14 @@ installed skill, not from the user's current directory:
 uv run --locked --project <bundle-root>/mcp/web-research-mcp python <research-execution>/scripts/research_control.py --project-root <workspace> --workflow <relative-workflow.yaml> <action>
 ```
 
+Read the project's existing setup first. An already verified Python 3.11+ environment
+can run the helper directly; `uv` above is a setup/run option, not a worker prerequisite.
+Generated control_entry.argv_prefix reuses the actual Python executable running prepare/
+packet and absolute script/workspace paths. Execute that argument array without reconstructing
+shell quoting or searching for another Python. A moved installation needs one fresh runtime
+verification and new packets. Do not build a runtime registry or install manager.
+Generated `.json` files are strict JSON; no legacy YAML-in-JSON migration is provided.
+
 Initialize the canonical evidence draft with the shared `init` command first. The
 coordinator supplies a UTF-8 JSON host declaration through `prepare --host-declaration
 <relative-host.json>`. Record actual observations; the following labels are examples,
@@ -92,9 +100,12 @@ or a bounded failure with explicit limitations; never claim they were read. Supp
 or changing the material invalidates the old packet, so reopen affected work and
 issue a current packet before continuing. A missing-material receipt is not evidence.
 
-The synthesis submission identifies its workflow, attempt, context and packet hash,
-declares actual isolation, and contains the complete merged evidence draft plus
-neutral_synthesis. Preserve supplied facts, sources and receipts. Candidate tagging
+The synthesis packet contains one immutable merged draft. Its submission identifies the
+workflow, attempt, context and packet hash, declares actual isolation, and contains only
+neutral_synthesis, candidate_tags (evidence_item_id -> candidate ID list), and
+coverage_limitations (new limitation records). Empty annotations are valid. The helper
+assembles the final package from retained research; do not return a rewritten draft.
+Preserve supplied facts, sources and receipts. Candidate tagging
 and explicit coverage limitations may organize existing evidence, but new factual
 claims return to research. A candidate discovered late is not automatically inferior;
 record any missing earlier-theme evidence. Disclose unsupported estimates and tests
@@ -115,6 +126,19 @@ neutral report, run the existing validate-publication gate against that exact pa
 then publish only under the existing acceptance and revision rules. UNDERSTAND ends
 with the report; DECIDE proceeds to readiness. A stopped task with an explicit gap
 can yield PARTIAL, not proof that the requested quality bar was met.
+
+Use workflow_control.py with the same verified Python, project root and workflow:
+
+- `preview-report --package <proposed-package> --output <report.md>` validates and exports
+  the exact neutral report, returning its hash, quality status and awaiting_acceptance.
+- Show the report and quality limitations; ask for acceptance/corrections in ordinary
+  text. There is no timeout. Save the pending question and preview hash/reference.
+- Only after the user accepts that shown version, run `accept-report --package <ref>
+  --report <report.md> --reviewed-sha256 <preview-hash> --user-response <actual-response>`.
+  The host interprets the affirmative reply; the helper checks bytes/current bindings,
+  records that response and advances the existing workflow. A structural check cannot
+  prove human acceptance. Changed text must be reviewed again. Accepting a PARTIAL report
+  does not upgrade its evidence to COMPLETE.
 
 Before acceptance, wording changes use summary-packet --revise and resubmission
 through the allowed summary context. Preserve facts and counts. Corrections to facts

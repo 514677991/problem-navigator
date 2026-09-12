@@ -12,10 +12,15 @@ import re
 from pathlib import Path
 import tempfile
 import time
+import sys
+import uuid
+from datetime import date, datetime
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 import yaml
+# Resolve this bundle's code independently of editable installs and the caller's cwd.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'mcp/web-research-mcp/src'))
 from web_research.security import normalize_public_url
 
 SCHEMA = json.loads((Path(__file__).resolve().parents[1] / 'references/artifacts.schema.json').read_text('utf-8'))
@@ -27,6 +32,15 @@ DEFAULT_BUDGET = {'limit': 40, 'recovery_reserve': 6}
 def validate(name: str, value: dict) -> None:
     schema = {'$schema': SCHEMA['$schema'], '$defs': SCHEMA['$defs'], '$ref': f'#/$defs/{name}'}
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(value)
+    for source in ([value] if name == 'source' else value.get('sources', [])):
+        stamp = source['retrieved_at']
+        try:
+            if re.fullmatch(r'\d{4}-\d{2}-\d{2}', stamp):
+                date.fromisoformat(stamp)
+            elif datetime.fromisoformat(stamp.replace('Z', '+00:00')).tzinfo is None:
+                raise ValueError('timezone required')
+        except (TypeError, ValueError):
+            raise ValueError('INVALID_SOURCE_RETRIEVAL_TIME') from None
 
 
 def _unique(values: list[dict], key: str) -> dict[str, dict]:
@@ -134,6 +148,11 @@ def validate_evidence(workflow: dict, frame: dict, brief: dict, evidence: dict, 
     for source in sources.values():
         if normalize_public_url(source['normalized_url']) != source['normalized_url']:
             raise ValueError('SOURCE_URL_NOT_NORMALIZED')
+        grant = workflow.get('research_reservations', {}).get(source['call_ref'])
+        kind = source.get('content_kind')
+        if grant and (grant['operation'] == 'map' or (kind == 'search_excerpt' and grant['operation'] != 'search')
+                      or (grant['operation'] == 'search' and kind in ('page_excerpt', 'full_page'))):
+            raise ValueError('SOURCE_OPERATION_MISMATCH')
     external = _unique(evidence['external_sources'], 'external_source_id')
     items = _unique(evidence['evidence_items'], 'evidence_item_id')
     _unique(evidence['limitations'], 'limitation_id')
@@ -505,11 +524,22 @@ def _path(root: Path, relative: str) -> Path:
 
 
 def _write(path: Path, value: dict) -> None:
+    text = (json.dumps(value, ensure_ascii=False, indent=2) + '\n'
+            if path.suffix.lower() == '.json' else yaml.safe_dump(value, allow_unicode=True, sort_keys=False))
+    _write_bytes(path, text.encode('utf-8'))
+
+
+def _read_file(path: Path):
+    data = path.read_bytes()
+    return json.loads(data) if path.suffix.lower() == '.json' else yaml.safe_load(data)
+
+
+def _write_bytes(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(prefix='.workflow-', suffix='.tmp', dir=path.parent)
     try:
-        with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
-            yaml.safe_dump(value, stream, allow_unicode=True, sort_keys=False)
+        with os.fdopen(descriptor, 'wb') as stream:
+            stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
@@ -576,6 +606,23 @@ def main() -> None:
     parser.add_argument('--project-root', type=Path, required=True)
     parser.add_argument('--workflow', required=True)
     sub = parser.add_subparsers(dest='action', required=True)
+    create = sub.add_parser('create')
+    create.add_argument('--backend', choices=('NONE', 'UNSET', 'RESEARCH_CORE', 'HOST_NATIVE'), required=True)
+    create.add_argument('--user-approved-host', action='store_true')
+    accept = sub.add_parser('accept-frame')
+    accept.add_argument('--frame', required=True)
+    accept.add_argument('--reviewed-sha256', required=True)
+    accept.add_argument('--user-response', required=True)
+    sub.add_parser('attach-brief').add_argument('--brief', required=True)
+    for action in ('preview-report', 'accept-report'):
+        report = sub.add_parser(action)
+        report.add_argument('--package', required=True)
+        if action == 'preview-report':
+            report.add_argument('--output', required=True)
+        else:
+            report.add_argument('--report', required=True)
+            report.add_argument('--reviewed-sha256', required=True)
+            report.add_argument('--user-response', required=True)
     sub.add_parser('init')
     for action in ('reopen', 'append'):
         item = sub.add_parser(action)
@@ -610,18 +657,109 @@ def main() -> None:
 
 
 def _run_cli(args, root: Path, workflow_path: Path) -> None:
-    workflow = yaml.safe_load(workflow_path.read_text('utf-8'))
+    if args.action == 'create':
+        if workflow_path.exists():
+            raise ValueError('WORKFLOW_ALREADY_EXISTS')
+        if (args.backend == 'HOST_NATIVE') != args.user_approved_host:
+            raise ValueError('HOST_AUTHORIZATION_REQUIRED')
+        identifier = str(uuid.UUID(workflow_path.stem)) if re.fullmatch(SCHEMA['$defs']['workflow_id']['pattern'], workflow_path.stem) else str(uuid.uuid4())
+        workflow = dict(schema_version=1, workflow_id=identifier, next_stage='problem-framing',
+                        selected_backend=args.backend, native_fallback_approved=args.user_approved_host,
+                        research_state='NOT_STARTED', call_counts={}, artifact_refs={}, research_budget=deepcopy(DEFAULT_BUDGET))
+        validate('workflow', workflow)
+        _write(workflow_path, workflow)
+        print(json.dumps({'workflow_id': workflow['workflow_id'], 'next_stage': 'problem-framing'}))
+        return
+    workflow = _read_file(workflow_path)
     validate('workflow', workflow)
+    if args.action == 'accept-frame':
+        if workflow['next_stage'] != 'problem-framing' or workflow['call_counts']:
+            raise ValueError('FRAME_ACCEPTANCE_STAGE_REQUIRED')
+        path = _path(root, args.frame)
+        data = path.read_bytes()
+        if hashlib.sha256(data).hexdigest() != args.reviewed_sha256 or not args.user_response.strip():
+            raise ValueError('REVIEWED_FRAME_AND_RESPONSE_REQUIRED')
+        frame = json.loads(data) if path.suffix.lower() == '.json' else yaml.safe_load(data)
+        validate('problem_frame', frame)
+        if frame['workflow_id'] != workflow['workflow_id']:
+            raise ValueError('WORKFLOW_MISMATCH')
+        frame.update(user_confirmation_status='ACCEPTED', confirmation_basis=args.user_response)
+        validate('problem_frame', frame)
+        ref = f".problem-navigator/artifacts/{workflow['workflow_id']}/problem-frame.yaml"
+        workflow.update(analysis_goal=frame['analysis_goal'], next_stage='research-design-kickoff')
+        workflow['artifact_refs']['problem_frame'] = ref
+        validate('workflow', workflow)
+        _write(_path(root, ref), frame)
+        _write(workflow_path, workflow)
+        print(json.dumps({'next_stage': workflow['next_stage'], 'frame_ref': ref}))
+        return
     def read(name: str) -> dict:
-        return yaml.safe_load(_path(root, workflow['artifact_refs'][name]).read_text('utf-8'))
+        return _read_file(_path(root, workflow['artifact_refs'][name]))
+    if args.action == 'attach-brief':
+        if workflow['next_stage'] != 'research-design-kickoff' or workflow['call_counts'] or 'research_brief' in workflow['artifact_refs']:
+            raise ValueError('INITIAL_BRIEF_STAGE_REQUIRED')
+        frame = read('problem_frame')
+        brief = _read_file(_path(root, args.brief))
+        if brief['revision'] != 1:
+            raise ValueError('INITIAL_BRIEF_REVISION_REQUIRED')
+        workflow['artifact_refs']['research_brief'] = args.brief
+        workflow['call_counts'] = {t['task_id']: {'search': 0, 'fetch': 0, 'map': 0} for t in brief['tasks']}
+        workflow['next_stage'] = 'research-execution'
+        _boundary(workflow, frame, brief)
+        validate_brief_design(frame, brief, require_design=True)
+        _write(workflow_path, workflow)
+        print(json.dumps({'next_stage': 'research-execution'}))
+        return
     frame, brief = read('problem_frame'), read('research_brief')
+    if args.action in ('preview-report', 'accept-report'):
+        package = _read_file(_path(root, args.package))
+        report = package['neutral_synthesis'].encode('utf-8')
+        digest = hashlib.sha256(report).hexdigest()
+        package_digest = hashlib.sha256(_path(root, args.package).read_bytes()).hexdigest()
+        acceptance_path = _path(root, f".problem-navigator/artifacts/{workflow['workflow_id']}/report-acceptance.json")
+        if args.action == 'accept-report':
+            if not args.user_response.strip() or args.reviewed_sha256 != digest or _path(root, args.report).read_bytes() != report:
+                raise ValueError('REVIEWED_REPORT_AND_RESPONSE_REQUIRED')
+            # Repeating acceptance of the same published package is harmless.
+            if workflow['artifact_refs'].get('evidence_package') == args.package:
+                accepted = json.loads(acceptance_path.read_text('utf-8'))
+                if accepted['report_sha256'] != digest or accepted['package_sha256'] != package_digest:
+                    raise ValueError('ACCEPTED_REPORT_CHANGED')
+                validate_evidence(workflow, frame, brief, package)
+                print(json.dumps({'next_stage': workflow['next_stage'], 'already_accepted': True}))
+                return
+        draft = read('evidence_draft')
+        validate_publication(workflow, frame, brief, draft, package)
+        _research_helper().validate_dispatch_publication(root, workflow, frame, brief, draft, package)
+        if args.action == 'preview-report':
+            path = _path(root, args.output)
+            input_refs = list(workflow['artifact_refs'].values()) + [args.package]
+            input_refs.extend(ref for task in brief['tasks'] for ref in task.get('material_refs', []))
+            protected = {_path(root, ref) for ref in input_refs} | {workflow_path, acceptance_path}
+            if path.suffix.lower() != '.md' or path in protected:
+                raise ValueError('REPORT_MARKDOWN_PATH_REQUIRED')
+            _write_bytes(path, report)
+            print(json.dumps({'report_ref': args.output, 'report_sha256': digest,
+                              'research_state': package['research_state'], 'awaiting_acceptance': True}))
+            return
+        workflow['artifact_refs'].pop('evidence_draft')
+        workflow['artifact_refs']['evidence_package'] = args.package
+        workflow.update(research_state=package['research_state'], next_stage='DONE' if workflow['analysis_goal'] == 'UNDERSTAND' else 'decision-readiness-interview')
+        workflow.pop('blocking_reason', None)
+        validate('workflow', workflow)
+        acceptance = {'package_ref': args.package, 'report_ref': args.report,
+                      'report_sha256': digest, 'package_sha256': package_digest, 'user_response': args.user_response}
+        _write(acceptance_path, acceptance)
+        _write(workflow_path, workflow)
+        print(json.dumps({'next_stage': workflow['next_stage'], 'research_state': workflow['research_state']}))
+        return
     if args.action == 'validate-brief':
         _boundary(workflow, frame, brief)
         validate_brief_design(frame, brief, require_design=args.require_design)
         print(json.dumps({'brief_valid': True, 'revision': brief['revision']}))
         return
     if args.action == 'validate-publication':
-        package = yaml.safe_load(_path(root, args.package).read_text('utf-8'))
+        package = _read_file(_path(root, args.package))
         validate_publication(workflow, frame, brief, read('evidence_draft'), package)
         _research_helper().validate_dispatch_publication(root, workflow, frame, brief, read('evidence_draft'), package)
         print(json.dumps({'publication_valid': True}))
@@ -631,17 +769,17 @@ def _run_cli(args, root: Path, workflow_path: Path) -> None:
         validate_decision(workflow, frame, brief, read('evidence_package'), read('readiness_pack'), decision, project_root=root)
         if (refined['decision_id'], refined['decision_version']) != (decision['decision_id'], decision['decision_version']):
             raise ValueError('STALE_UPSTREAM_BINDING')
-        document = yaml.safe_load(_path(root, args.document).read_text('utf-8'))
+        document = _read_file(_path(root, args.document))
         validate_document(frame, refined, document, project_root=root)
         print(json.dumps({'document_valid': True}))
         return
     if args.action == 'validate-readiness':
-        readiness = yaml.safe_load(_path(root, args.readiness).read_text('utf-8'))
+        readiness = _read_file(_path(root, args.readiness))
         validate_readiness(workflow, frame, brief, read('evidence_package'), readiness)
         print(json.dumps({'readiness_valid': True, 'status': readiness['status']}))
         return
     if args.action == 'validate-decision':
-        decision = yaml.safe_load(_path(root, args.decision).read_text('utf-8'))
+        decision = _read_file(_path(root, args.decision))
         validate_decision(workflow, frame, brief, read('evidence_package'), read('readiness_pack'), decision, project_root=root)
         print(json.dumps({'decision_valid': True, 'review_mode': decision['review']['mode']}))
         return
@@ -654,7 +792,7 @@ def _run_cli(args, root: Path, workflow_path: Path) -> None:
             reopen_ids = _research_helper().affected_dispatch_tasks(root, workflow, brief, evidence, args.task_id)
             updated, draft = reopen_research(workflow, frame, brief, evidence, list(reopen_ids), args.reason, user_requested=args.user_requested)
         else:
-            tasks = yaml.safe_load(_path(root, args.tasks).read_text('utf-8'))
+            tasks = _read_file(_path(root, args.tasks))
             readiness = read('readiness_pack') if 'readiness_pack' in workflow['artifact_refs'] else None
             updated, revised, draft = extend_brief(workflow, frame, brief, evidence, tasks, args.reason, user_requested=args.user_requested, readiness=readiness)
             writes.append((_path(root, workflow['artifact_refs']['research_brief']), revised))

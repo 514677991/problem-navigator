@@ -37,6 +37,10 @@ Set `analysis_goal` once:
 - `DECIDE` for choosing, ranking, recommending, approving, or forming an actionable solution.
 - 从零开始把产品、软件或其他想法形成完整方案时，默认 `DECIDE`.
 
+Researching or mapping technical routes without a requested ranking/recommendation is
+UNDERSTAND. Reuse an already selected research-report goal; the word "route" alone is
+not a reason to ask the same goal question again.
+
 When this distinction is unclear, 只问 `analysis_goal` 这一项. Do not open a questionnaire or add another mode system. Draft other fields from the user's supplied meaning and let the confirmation gate expose any correction.
 
 Set `content_profile` independently:
@@ -73,12 +77,19 @@ weaken an already explicit court instruction.
 
 ## Confirmation and artifact
 
-Present a concise frame containing the problem, outcome, scope/non-goals, constraints,
-assumptions, endpoint, analysis_goal and content_profile. Reuse explicit user instructions
-that already establish or delegate this scope. Ask only about a material ambiguity;
-do not demand a separate ritual confirmation after a clear instruction to proceed.
-Silence never confirms newly invented scope. Record ACCEPTED only from actual explicit
-instructions/acceptance; preserve the source of that scope in the human explanation.
+After clarification, present one concise requirement summary: problem, intended outcome,
+research priorities, scope/non-goals, constraints and important assumptions. Explain the
+endpoint and goal/profile in natural language, not as a form of internal enums. Identify
+assistant-proposed boundaries. Ask in ordinary text for confirmation or corrections and
+wait without a deadline. Selecting a report type or authorizing Web access alone does
+not accept the assembled frame. A general instruction to proceed permits preparation,
+not acceptance of an unseen summary. Reuse actual acceptance of this same shown version;
+do not ask again when resuming it unchanged.
+
+While waiting, save `frame-draft.yaml` beside the eventual frame with
+user_confirmation_status: DRAFT; record the question/reference in the shared pending.md.
+Keep next_stage at problem-framing and do not design or dispatch research. After a scope
+correction update the draft and show the revised summary before asking again.
 
 After explicit acceptance, create this single artifact at `.problem-navigator/artifacts/<workflow_id>/problem-frame.yaml`:
 
@@ -97,6 +108,7 @@ constraints: []
 assumptions: []
 delivery_endpoint: <confirmed report or specification endpoint>
 user_confirmation_status: ACCEPTED
+confirmation_basis: <actual affirmative user response to the shown summary>
 ```
 
 Use a stable `problem_frame_id`. A user-confirmed correction increments `problem_frame_version` and atomically replaces the same stable file; do not keep a version graph.
@@ -104,6 +116,12 @@ Use a stable `problem_frame_id`. A user-confirmed correction increments `problem
 ## Atomic handoff order
 
 The only success order is:
+
+Use `workflow_control.py accept-frame --frame <relative-draft.yaml>
+--reviewed-sha256 <draft-byte-hash> --user-response <actual-affirmative-response>`.
+The hash binds the draft underlying the shown summary; the host must truthfully attest
+that the response accepts that summary. This command performs the following writes;
+do not hand-edit the accepted flag or workflow to replace it.
 
 1. 原子写入 `problem-frame.yaml` through a same-directory temporary file and replace.
 2. Only after that succeeds, 更新 workflow YAML atomically with the same accepted `analysis_goal`, the relative `artifact_refs.problem_frame` path, and `next_stage: research-design-kickoff`.

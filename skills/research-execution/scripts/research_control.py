@@ -12,9 +12,8 @@ import importlib.util
 import json
 from pathlib import Path
 import re
+import sys
 import uuid
-
-import yaml
 
 _spec = importlib.util.spec_from_file_location('research_workflow_control', Path(__file__).resolve().parents[2] / 'problem-navigator/scripts/workflow_control.py')
 control = importlib.util.module_from_spec(_spec)
@@ -31,7 +30,19 @@ def _file_hash(root, ref):
 
 
 def _read(root, ref):
-    return yaml.safe_load(control._path(root, ref).read_text('utf-8'))
+    return control._read_file(control._path(root, ref))
+
+
+def _record_schema(*names):
+    """Include only the requested records and their transitive local definitions."""
+    definitions, pending = {}, list(names)
+    while pending:
+        name = pending.pop()
+        if name in definitions:
+            continue
+        definitions[name] = control.SCHEMA['$defs'][name]
+        pending.extend(re.findall(r'#/\$defs/([A-Za-z0-9_]+)', json.dumps(definitions[name])))
+    return {'$schema': control.SCHEMA['$schema'], '$defs': definitions}
 
 
 def _material(root, ref):
@@ -251,9 +262,9 @@ def _new_assignment(root, workflow, manifest, context, binding, payload, *, allo
                    assigned_result_ref=assignment['assigned_result_ref'], host=manifest['host'])
     skill = Path(__file__).resolve().parents[1]
     payload['control_entry'] = {'project_root': str(root), 'workflow_ref': manifest['workflow_ref'], 'script_path': str(Path(__file__).resolve()),
-                                'argv_prefix': ['uv', 'run', '--locked', '--project', str(Path(__file__).resolve().parents[3] / 'mcp/web-research-mcp'),
-                                                'python', '-B', '-X', 'utf8', str(Path(__file__).resolve()), '--project-root', str(root), '--workflow', manifest['workflow_ref']]}
-    payload['operating_instructions'] = {str(path): path.read_text('utf-8') for path in (skill / 'SKILL.md', skill / 'references/research-dispatch.md') if path.is_file()}
+                                'argv_prefix': [sys.executable, '-B', '-X', 'utf8', str(Path(__file__).resolve()), '--project-root', str(root), '--workflow', manifest['workflow_ref']]}
+    documents = (skill / 'SKILL.md', skill / 'references/research-dispatch.md') if 'task' in payload else (skill / 'references/research-dispatch.md',)
+    payload['operating_instructions'] = {str(path): path.read_text('utf-8') for path in documents}
     payload['instruction_entry'] = 'Read every operating_instructions document before work. Append the documented action and arguments to control_entry.argv_prefix; run from project_root. Attach all declared materials when handing this packet to an external Session. A copied workspace is not shared control.'
     payload['output_template'].update(schema_version=1, workflow_id=workflow['workflow_id'], attempt_id=attempt, context_id=context,
                                       packet_sha256='COPY_PACKET_SHA256_FROM_RECEIPT', isolated_context=True, main_context_clean=True)
@@ -290,8 +301,8 @@ def packet(root, workflow, frame, brief, draft, manifest, task_id, context):
                     'Without shared control, stop at handoff; an external Session may give its user an unexecuted copyable packet, never claim controlled research occurred.')
     assignment = _new_assignment(root, workflow, manifest, context, binding, {'frame': frame, 'task': task, 'design': brief.get('design'),
         'materials': materials, 'dependency_results': dependencies, 'known_candidates': draft.get('candidates', []),
-        'instructions': instructions, 'record_schema': {k: control.SCHEMA['$defs'][k] for k in ('receipt', 'source', 'external_source', 'evidence_item', 'limitation', 'candidate')},
-        'shared_schema': control.SCHEMA, 'output_template': template})
+        'instructions': instructions,
+        'shared_schema': _record_schema('receipt', 'source', 'external_source', 'evidence_item', 'limitation', 'candidate'), 'output_template': template})
     manifest['assignments'][task_id] = assignment
     _save_manifest(root, workflow, manifest)
     return _receipt('PACKET_READY' if manifest['host']['shared_control_available'] else 'HANDOFF_REQUIRED', assignment)
@@ -324,7 +335,7 @@ def reserve(root, workflow_path, workflow, frame, brief, draft, manifest, args):
 
 def _envelope(value, workflow, assignment, *, summary=False):
     fields = {'schema_version', 'workflow_id', 'attempt_id', 'context_id', 'packet_sha256', 'isolated_context', 'main_context_clean'}
-    required = {'draft', 'neutral_synthesis'} if summary else {'task_id', 'receipt', *COLLECTIONS}
+    required = {'candidate_tags', 'coverage_limitations', 'neutral_synthesis'} if summary else {'task_id', 'receipt', *COLLECTIONS}
     allowed = fields | required | (set() if summary else {'candidates', 'candidate_basis'})
     if not isinstance(value, dict) or not fields | required <= value.keys() or value.keys() - allowed:
         raise ValueError('INVALID_RESULT_RECORD')
@@ -421,12 +432,12 @@ def summary_packet(root, workflow, frame, brief, draft, manifest, context, *, re
             raise ValueError('SUMMARY_ALREADY_ASSIGNED_OR_STALE')
         return _receipt('SUMMARY_READY', existing)
     allow_used = (len(brief['tasks']) == 1 and any(a['context_id'] == context for a in manifest['assignments'].values())) or bool(revise and existing and context == existing['context_id'])
-    assignment = _new_assignment(root, workflow, manifest, context, binding, {'frame': frame, 'brief': brief, 'base_draft': draft, 'results': results,
-        'instructions': 'Independently merge the supplied records into a neutral complete draft. Preserve every source, receipt, fact and limitation. '
-                        'You may assign supported candidate_ids and add explicit candidate/theme coverage limitations. Do not fabricate facts, delete conflicts, '
+    assignment = _new_assignment(root, workflow, manifest, context, binding, {'frame': frame, 'brief': brief, 'draft': _merge(draft, results),
+        'instructions': 'Read the complete immutable draft and write a neutral synthesis. The helper preserves all supplied research records. '
+                        'Return candidate_tags as an evidence_item_id to candidate_ids object, and coverage_limitations as new limitation records (both empty when unnecessary). Do not fabricate facts, delete conflicts, '
                         'change candidate definitions, choose a winner, call research tools, or edit canonical files. New facts require reopened research. '
                         'Write only assigned_result_ref, invoke research_control summary, and return its safe receipt to the coordinator.',
-        'shared_schema': control.SCHEMA, 'output_template': {'draft': _merge(draft, results), 'neutral_synthesis': 'REPLACE_WITH_NEUTRAL_SYNTHESIS'}} , allow_used=allow_used)
+        'shared_schema': _record_schema('limitation', 'string_list'), 'output_template': {'candidate_tags': {}, 'coverage_limitations': [], 'neutral_synthesis': 'REPLACE_WITH_NEUTRAL_SYNTHESIS'}} , allow_used=allow_used)
     manifest['summary'] = assignment
     _save_manifest(root, workflow, manifest)
     return _receipt('SUMMARY_READY', assignment)
@@ -450,22 +461,17 @@ def summarize(root, workflow, frame, brief, draft, manifest, ref):
     if binding != assignment['input_sha256']:
         raise ValueError('STALE_SUMMARY_INPUTS')
     expected = _merge(draft, results)
-    merged = value['draft']
-    for key in ('schema_version', 'workflow_id', 'brief_revision', 'base_evidence_revision', 'completed_receipts', 'unfinished_task_ids', 'sources', 'external_sources'):
-        if merged.get(key) != expected.get(key):
-            raise ValueError('SUMMARY_CHANGED_RESEARCH_RECORDS')
-    for key in ('evidence_items', 'limitations', 'candidates'):
-        id_key = COLLECTIONS.get(key, 'candidate_id')
-        before = control._unique(expected.get(key, []), id_key)
-        after = control._unique(merged.get(key, []), id_key)
-        if not before.keys() <= after.keys() or (key != 'limitations' and before.keys() != after.keys()):
-            raise ValueError('SUMMARY_INVENTED_OR_REMOVED_RECORDS')
-        for identifier, record in before.items():
-            old, new = deepcopy(record), deepcopy(after[identifier])
-            if key == 'evidence_items':
-                old.pop('candidate_ids', None); new.pop('candidate_ids', None)
-            if old != new:
-                raise ValueError('SUMMARY_CHANGED_RESEARCH_RECORDS')
+    merged = expected
+    tags, limits = value['candidate_tags'], value['coverage_limitations']
+    items = control._unique(merged['evidence_items'], 'evidence_item_id')
+    candidates = {c['candidate_id'] for c in merged.get('candidates', [])}
+    if not isinstance(tags, dict) or not isinstance(limits, list) or not set(tags) <= set(items):
+        raise ValueError('INVALID_SUMMARY_ANNOTATIONS')
+    for identifier, ids in tags.items():
+        if workflow['analysis_goal'] != 'DECIDE' or not isinstance(ids, list) or any(not isinstance(cid, str) for cid in ids) or not set(ids) <= candidates:
+            raise ValueError('INVALID_SUMMARY_CANDIDATE_TAGS')
+        items[identifier]['candidate_ids'] = ids
+    merged['limitations'].extend(limits)
     if not isinstance(value['neutral_synthesis'], str) or not value['neutral_synthesis'].strip():
         raise ValueError('NEUTRAL_SYNTHESIS_REQUIRED')
     control.validate_evidence(workflow, frame, brief, merged)

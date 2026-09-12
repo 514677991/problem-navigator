@@ -65,6 +65,12 @@ Draft 1–12 initial tasks with stable unique RES-NNN IDs. Each new task has:
   `[]`. Do not manufacture a dependency chain for independent questions.
 
 Task depth follows scope; a simple material question can express each field briefly.
+State core versus overview treatment in the existing purpose and expected_output fields.
+Core tasks name the decisive claims/results to inspect; overview tasks establish position
+and boundaries without promising equal depth. Choose this from the confirmed user priority,
+not a fixed subject, percentage or equal split between workers. Write distinct quality bars
+and stop conditions. Plan within the shared budget including reading and recovery; trim
+peripheral questions before diluting core evidence. No new scoring or budget subsystem.
 Use primary support appropriate to the claim, and distinguish documented promises
 from observed behavior. Plan counterevidence around important claims, not a fixed
 number of objections. For DECIDE, questions should distinguish alternatives under
@@ -83,8 +89,9 @@ Revision-1 tasks have no supplemental_request_id.
 
 Write research-brief.yaml with schema_version: 1, workflow_id, revision: 1, analysis_goal,
 problem_frame_id and problem_frame_version copied from the current accepted frame,
-design and tasks. Then set workflow's research_brief ref, zero counts for exactly its task IDs and
-next_stage: research-execution. Artifact files first and workflow last. Execution invokes
+design and tasks. Run `workflow_control.py attach-brief --brief <relative-research-brief.yaml>`
+to validate the design/bindings, set the ref, initialize exactly its task counts and advance
+to research-execution. Artifact files first and workflow last. Execution invokes
 the shared validate-brief --require-design command for this new brief, then init before
 requiring its evidence draft. Present the questions but
 only block on a material boundary uncertainty.

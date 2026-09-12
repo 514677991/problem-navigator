@@ -29,7 +29,24 @@ remain machine-readable; explain their meaning in the user's language.
 文本内容的语言一致；机器键名、枚举、ID、文件名
 及原始引用保持稳定。两种语言共用同一流程，不复制状态机或放宽证据与验收要求。
 
-## Host capabilities and skill resolution
+## User interaction
+
+Use ordinary text for every plugin clarification, backend choice, requirement review
+and deliverable acceptance. Do not invoke option-card or structured-question tools.
+Ask a concise question and let the user reply in their own words. Required answers
+have no deadline: no reply is neither approval nor a default choice. End the response
+while waiting; do not poll, keep a worker alive or advance dependent stages.
+Keep the current question and reviewed draft reference in
+`.problem-navigator/pending.md` so a later turn can resume it. Replace this one note
+when the question changes; clear it after an answer is applied. It is a human-readable
+handoff note, not a second state machine. Recheck the current stage and draft before
+applying a late answer. Scope changes need a revised summary and acceptance; an
+unchanged accepted summary does not. System-owned permission dialogs are separate.
+
+普通文字提问，不用选项卡；关键答复不限时，沉默不代表同意。待答问题和草稿引用保存在
+同一份 pending.md 中，恢复后核对当前内容再处理，不以循环等待维持会话。
+
+## Host capabilities and runtime
 
 The common workflow requires a host that can load the complete skill bundle, read and
 write local workspace files, run the locked Python project below, and obtain real user
@@ -59,10 +76,21 @@ research configuration or network checks.
 Use entry-skill scripts/workflow_control.py, resolving its location from this installed skill. The bundle root contains mcp/web-research-mcp and its uv.lock. Run the locked Python 3.11+ project (which supplies PyYAML/jsonschema):
     uv run --locked --project <bundle-root>/mcp/web-research-mcp python <entry-skill>/scripts/workflow_control.py --project-root <workspace> --workflow .problem-navigator/workflows/<id>.yaml <action>
 
+Read existing project setup first. Once its Python 3.11+ environment can execute this
+helper with the locked dependencies, run that executable directly for subsequent roles
+and checks. The uv example is one way to prepare/run it; do not rediscover uv or choose
+the system Python for every role. Keep installation, interpreter and workspace paths
+distinct. Research packets carry the verified executable in control_entry.argv_prefix.
+
 Quote paths for the host shell. This local helper makes no research calls. It checks schema, identities, ownership and relevant bindings; the host still evaluates factual support and user authorization. Missing runtime is a prerequisite failure: preserve state and explain it.
 
 | Situation | Action | Result |
 |---|---|---|
+| New workflow | create --backend NONE\|UNSET\|RESEARCH_CORE\|HOST_NATIVE [--user-approved-host] | Create initial state; never replace an existing workflow. HOST_NATIVE needs actual scoped consent. |
+| User accepted the shown requirement summary | accept-frame --frame <draft> --reviewed-sha256 <hash> --user-response <reply> | Bind the accepted draft and record the real reply before advancing to research design. |
+| Initial research brief is written | attach-brief --brief <ref> | Validate scope, design and dependencies; establish refs/counts and advance to execution. |
+| Proposed research report | preview-report --package <ref> --output <report.md> | Export exact validated neutral text and return quality status/hash; remain awaiting acceptance. |
+| User accepted that report version | accept-report --package <ref> --report <report.md> --reviewed-sha256 <hash> --user-response <reply> | Verify reviewed bytes and current package; record acceptance and publish COMPLETE or PARTIAL without changing its quality. |
 | Newly generated research brief, with matching workflow refs/counts | validate-brief --require-design | Validate profile-scoped design, coverage, task definitions and dependencies before execution |
 | Initial execution, NOT_STARTED, zero counts, no evidence refs | init | Draft with all tasks unfinished, IN_PROGRESS |
 | Incorrect old evidence, also UNDERSTAND before/after final report | reopen --task-id RES-001 [--task-id ...] --reason <correction> | Reopen affected tasks, withdraw their evidence, retain counts/unaffected facts, invalidate downstream refs |

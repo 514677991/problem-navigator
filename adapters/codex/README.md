@@ -2,7 +2,7 @@
 
 # Problem Navigator — Codex adapter
 
-This is the Codex adapter for the general-purpose Problem Navigator plugin, release `2.3.0`, with local Web Research MCP `0.2.0`. The shared skills and Python/MCP core can also be integrated with other capable hosts; this guide covers only Codex. Turn general or product/software problems into evidence-backed reports and design specifications in Chinese or English. The workflow ends at analysis/design and does not generate implementation code or deploy a system.
+This is the Codex adapter for the general-purpose Problem Navigator plugin, release `2.4.0`, with local Web Research MCP `0.2.0`. The shared skills and Python/MCP core can also be integrated with other capable hosts; this guide covers only Codex. Turn general or product/software problems into evidence-backed reports and design specifications in Chinese or English. The workflow ends at analysis/design and does not generate implementation code or deploy a system.
 
 ## Enable the Codex adapter
 
@@ -18,7 +18,7 @@ codex plugin add problem-navigator@problem-navigator
 
 Start a **new Codex task with the plugin enabled**. Commands depend on support in your installed Codex; inspect `codex plugin --help` when needed. The official [plugin testing guide](https://developers.openai.com/plugins/deploy/connect-chatgpt) describes installing from a local marketplace and testing in a new conversation.
 
-Use the single release archive `problem-navigator-2.3.0.zip`; no separate Codex download is needed. The archive catalog points to its own root (`source.path: "."`). Use the archive-root catalog and the marketplace/plugin name shown above.
+Use the single release archive `problem-navigator-2.4.0.zip`; no separate Codex download is needed. The archive catalog points to its own root (`source.path: "."`). Use the archive-root catalog and the marketplace/plugin name shown above.
 
 The first dependency sync may download packages. The inline `mcpServers` object in `.codex-plugin/plugin.json` launches the shared local stdio server through `uv`. The bundle does not use an independent `.mcp.json`. Skills and MCP core are included once and also support direct loading in other capable hosts.
 
@@ -86,6 +86,16 @@ Each core call selects one route; it does not silently switch providers on failu
 You supply any Codex/model access and pay applicable provider charges. The local server sends authorized queries, public URLs, domain filters, and related options to the selected provider; keep secrets and private details out of them. The workflow budget counts operations, not money. Host-native tools require explicit authorization for their research scope.
 
 ## Troubleshooting and verification
+
+Plugin questions use ordinary text, not Codex option cards. Required confirmation has
+no timeout default; a later reply resumes from the workspace pending.md and draft.
+Accept the assembled requirement summary before research and the actual report version
+at delivery. System-owned Codex permission dialogs remain outside plugin control.
+
+At first Web use without suitable configuration, choose local setup of the needed
+providers using the instructions above, authorized built-in tools or offline work.
+Never paste API keys into chat. Reuse the project's verified Python environment for
+all roles; execute packet control_entry.argv_prefix directly without rediscovering uv.
 
 - Missing plugin: enable it and start a new task; confirm your Codex supports the local marketplace flow.
 - Missing `uv`/Python: check the environment seen by the desktop host and prepare Python 3.11+ with locked dependencies.

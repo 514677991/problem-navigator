@@ -29,6 +29,10 @@ schema_version: 1, next_stage: problem-framing, research_state: NOT_STARTED,
 native_fallback_approved: false, call_counts: {}, artifact_refs: {},
 research_budget: {limit: 40, recovery_reserve: 6}.
 analysis_goal is assigned at framing; content_profile exists only in the frame.
+Use the shared `workflow_control.py create --backend <backend>` command; it supplies
+the initial state. HOST_NATIVE also requires `--user-approved-host` from actual consent.
+Reuse a verified Python 3.11+ environment and existing project setup instructions.
+Read the shared ordinary-text interaction rule; this entry never uses option cards.
 
 Pure reasoning/user materials or explicit offline request selects NONE. 不运行 MCP
 reachability、不得检查 MCP status、不得调用 web_research_status, no network call.
@@ -44,8 +48,15 @@ A valid environment key can be usable despite config_state: INVALID; explain the
 
 If unavailable, explain the specific Python 3.11+, uv, available skill bundle, MCP registration or
 provider-key prerequisite. Recheck after a change. Do not install or claim repairs without
-doing/verifying them. Use current explicit host authorization when available; otherwise
-disclose intended capability, evidence scope and outbound query/URL/domain data and ask.
+doing/verifying them. When no suitable provider is configured and no backend preference
+already settles the choice, explain which required capability is missing and ask in
+ordinary text whether the user wants setup guidance, authorized host research, or offline
+analysis. Include the host scope/outbound data disclosure when offering host research.
+For setup, read the Provider keys and routes section of `<bundle-root>/HOST_INSTRUCTIONS.md`;
+guide local configuration of only the needed providers. Never ask for a key in chat.
+Recheck local status after configuration; only a real authorized request verifies live
+authentication/quota. An existing explicit host choice skips this setup question.
+Preserve the pending question and remain at framing until the necessary answer arrives.
 No consent leaves UNSET + false, RESEARCH_BLOCKED, problem-framing and
 blocking_reason: {code: NO_AUTHORIZED_WEB_BACKEND, task_ids: []}.
 Approval selects HOST_NATIVE + true and NOT_STARTED. The entry still does not research.

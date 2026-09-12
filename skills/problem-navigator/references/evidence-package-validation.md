@@ -35,6 +35,11 @@ corrections return to research; context declarations cannot prove actual indepen
 10. Derive research state from outcomes; FACT has support, critical claims passage_locator,
     INFERENCE factual basis, UNKNOWN/ASSUMPTION limitations. Inspect currency, versions,
     counterevidence and source independence.
+11. Match each source's call_ref and content_kind to the actual supporting response, not
+    an unsuccessful later open. Search excerpts remain search excerpts; metadata and URL
+    discovery alone do not substantiate claims. Retrieval time comes from observed
+    execution/response metadata, or a truthful date-only value when time is unavailable.
+    Check the passage and conclusion together; schema validity alone cannot establish this.
 
 On corruption stop with MISSING_OR_INVALID_ARTIFACT and known task IDs, preserving counts
 and artifacts; use shared explicit recovery rather than guessing.
